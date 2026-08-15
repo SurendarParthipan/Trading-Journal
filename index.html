@@ -157,11 +157,42 @@
   .settings-checklist-row button{background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:2px 6px;}
   .settings-add-item{width:100%;background:none;border:1px dashed var(--line);color:var(--gold);border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:2px;}
 
-  .tag-stat-row{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;}
+  .tag-stat-row{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;box-shadow:var(--shadow-card);animation:fadeSlideUp .3s var(--ease-spring) both;transition:transform .15s var(--ease-spring), border-color .2s ease, box-shadow .2s ease;}
+  .tag-stat-row:hover{border-color:var(--gold-dim);box-shadow:0 6px 18px rgba(240,185,11,.12);}
+  .tag-stat-row:active{transform:scale(0.97);}
   .tag-stat-row .tsr-name{color:var(--text);font-weight:600;}
   .tag-stat-row .tsr-count{color:var(--muted);font-size:10px;margin-left:6px;}
   .tag-stat-row .tsr-pnl.pos{color:var(--green);}
   .tag-stat-row .tsr-pnl.neg{color:var(--red);}
+
+  .heatmap-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px;}
+  .heatmap-dow-row span{font-size:9px;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.03em;}
+  .heatmap-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:4px 0 10px;}
+  .heat-cell{aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--muted);background:var(--card2);border:1px solid var(--line);transition:transform .15s var(--ease-spring), box-shadow .15s ease;}
+  .heat-cell.empty-slot{visibility:hidden;}
+  .heat-cell.clickable{cursor:pointer;}
+  .heat-cell.clickable:hover{transform:scale(1.18);box-shadow:0 0 10px rgba(240,185,11,.5);z-index:2;position:relative;}
+  .heat-cell.clickable:active{transform:scale(0.92);}
+  .heat-cell.win-1{background:rgba(14,203,129,.28);color:var(--text);border-color:transparent;}
+  .heat-cell.win-2{background:rgba(14,203,129,.55);color:#fff;border-color:transparent;}
+  .heat-cell.win-3{background:rgba(14,203,129,.9);color:#fff;border-color:transparent;}
+  .heat-cell.loss-1{background:rgba(246,70,93,.28);color:var(--text);border-color:transparent;}
+  .heat-cell.loss-2{background:rgba(246,70,93,.55);color:#fff;border-color:transparent;}
+  .heat-cell.loss-3{background:rgba(246,70,93,.9);color:#fff;border-color:transparent;}
+  .heatmap-legend{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);justify-content:center;margin-bottom:6px;}
+  .heatmap-legend .heat-cell{border-radius:3px;}
+
+  .collapse-section{border:1px solid var(--line);border-radius:12px;margin:10px 0;overflow:hidden;background:linear-gradient(165deg,var(--card) 0%,var(--card2) 100%);box-shadow:var(--shadow-card);animation:fadeSlideUp .4s var(--ease-spring) both;transition:border-color .25s ease, box-shadow .25s ease;}
+  .collapse-section:hover{border-color:var(--gold-dim);box-shadow:0 8px 24px rgba(240,185,11,.14);}
+  .collapse-section.open{border-color:var(--gold-dim);}
+  .collapse-header{display:flex;justify-content:flex-start;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;color:var(--text);transition:background .2s ease;}
+  .collapse-header:hover{background:rgba(240,185,11,.06);}
+  .collapse-header:active{background:rgba(240,185,11,.1);}
+  .collapse-header .ch-badge{font-size:10px;color:var(--muted);font-weight:500;margin-left:auto;text-align:right;}
+  .collapse-chevron{font-size:11px;color:var(--gold);transition:transform .25s ease;flex-shrink:0;}
+  .collapse-section.open .collapse-chevron{transform:rotate(90deg);}
+  .collapse-body{max-height:0;overflow:hidden;transition:max-height .3s ease;padding:0 14px;}
+  .collapse-section.open .collapse-body{max-height:3000px;padding:0 14px 14px;}
 
   .import-intro{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;}
   .import-group{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;}
@@ -180,26 +211,37 @@
   .risk-item{text-align:center;}
   .risk-item .l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
 
-  .report-nav{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;}
-  .report-nav button{background:none;border:none;color:var(--gold);font-size:18px;font-weight:700;cursor:pointer;padding:0 8px;}
+  .report-nav{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;box-shadow:var(--shadow-card);}
+  .report-nav button{background:none;border:none;color:var(--gold);font-size:18px;font-weight:700;cursor:pointer;padding:0 8px;transition:transform .15s var(--ease-spring);}
+  .report-nav button:hover{transform:scale(1.2);}
+  .report-nav button:active{transform:scale(0.85);}
   .report-nav span{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);}
   .report-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0;}
-  .report-stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 6px;text-align:center;}
+  .report-stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 6px;text-align:center;box-shadow:var(--shadow-card);animation:fadeSlideUp .4s var(--ease-spring) both;transition:transform .18s var(--ease-spring), border-color .2s ease, box-shadow .2s ease;}
+  .report-stat:hover{transform:translateY(-3px);border-color:var(--gold-dim);box-shadow:0 8px 22px rgba(240,185,11,.18);}
   .report-stat .v{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;}
   .report-stat .l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;}
+  .report-stats-grid .report-stat:nth-child(1){animation-delay:.03s;}
+  .report-stats-grid .report-stat:nth-child(2){animation-delay:.06s;}
+  .report-stats-grid .report-stat:nth-child(3){animation-delay:.09s;}
+  .report-stats-grid .report-stat:nth-child(4){animation-delay:.12s;}
+  .report-stats-grid .report-stat:nth-child(5){animation-delay:.15s;}
+  .report-stats-grid .report-stat:nth-child(6){animation-delay:.18s;}
+  .report-stats-grid .report-stat:nth-child(7){animation-delay:.21s;}
   .report-daily-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;}
   .report-empty{text-align:center;color:var(--muted);font-size:12px;padding:20px;}
 
-  .stmt-card{background:var(--card);border:1px solid var(--gold-dim);border-radius:12px;padding:12px 14px;margin-top:12px;}
+  .stmt-card{background:linear-gradient(165deg,var(--card) 0%,var(--card2) 100%);border:1px solid var(--gold-dim);border-radius:14px;padding:14px 16px;margin-top:12px;box-shadow:var(--shadow-card);animation:fadeSlideUp .45s var(--ease-spring) both;}
   .stmt-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:5px 0;color:var(--muted);}
   .stmt-row .num{font-family:'JetBrains Mono',monospace;color:var(--text);font-weight:600;}
   .stmt-row.net{border-top:1px solid var(--line);margin-top:4px;padding-top:8px;font-weight:700;color:var(--text);}
-  .stmt-row.net .num{color:var(--gold);font-size:15px;}
-  .stmt-row.net .num.neg{color:var(--red);}
+  .stmt-row.net .num{color:var(--gold);font-size:15px;text-shadow:0 0 14px rgba(240,185,11,.55);}
+  .stmt-row.net .num.neg{color:var(--red);text-shadow:0 0 14px rgba(246,70,93,.5);}
 
   .ledger-head{display:grid;grid-template-columns:1.3fr 0.8fr 1fr 1fr;gap:4px;padding:0 10px;margin-bottom:6px;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
   .ledger-head .ta-r{text-align:right;}
-  .report-day-row{display:grid;grid-template-columns:1.3fr 0.8fr 1fr 1fr;gap:4px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:12px;}
+  .report-day-row{display:grid;grid-template-columns:1.3fr 0.8fr 1fr 1fr;gap:4px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:12px;box-shadow:var(--shadow-card);animation:fadeSlideUp .3s var(--ease-spring) both;transition:transform .15s var(--ease-spring), border-color .2s ease;}
+  .report-day-row:hover{border-color:var(--gold-dim);}
   .report-day-row .rd-date{font-family:'JetBrains Mono',monospace;color:var(--text);font-size:11px;}
   .report-day-row .rd-count{font-family:'Inter',sans-serif;font-size:10px;color:var(--muted);}
   .report-day-row .rd-pnl{font-family:'JetBrains Mono',monospace;font-weight:700;text-align:right;}
@@ -290,6 +332,10 @@
   .dir-btn{flex:1;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;}
   .dir-btn.buy.active{background:rgba(22,199,132,.15);border-color:var(--green);color:var(--green);}
   .dir-btn.sell.active{background:rgba(234,57,67,.15);border-color:var(--red);color:var(--red);}
+  .period-btn{flex:1;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:transform .15s var(--ease-spring), border-color .2s ease;}
+  .period-btn:hover{border-color:var(--gold-dim);}
+  .period-btn:active{transform:scale(0.96);}
+  .period-btn.active{background:var(--gold-soft);border-color:var(--gold-dim);color:var(--gold);}
   .layers-wrap{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px;}
   .layers-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
   .layers-head label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
@@ -526,8 +572,8 @@
   <h2>Account Statement</h2>
 
   <div class="dir-toggle" style="margin-bottom:10px;">
-    <button type="button" class="dir-btn buy active" id="repWeekBtn" onclick="setReportType('week')">Weekly</button>
-    <button type="button" class="dir-btn sell" id="repMonthBtn" onclick="setReportType('month')">Monthly</button>
+    <button type="button" class="period-btn active" id="repWeekBtn" onclick="setReportType('week')">Weekly</button>
+    <button type="button" class="period-btn" id="repMonthBtn" onclick="setReportType('month')">Monthly</button>
   </div>
 
   <div class="report-nav">
@@ -557,14 +603,58 @@
     <div class="report-stat"><div class="v" id="repWithdrawals">$0</div><div class="l">Withdrawn</div></div>
   </div>
 
-  <div class="section-title" style="padding-left:0;">Mistake &amp; Tag Patterns</div>
-  <div id="reportTagList"></div>
-
-  <div class="section-title" style="padding-left:0;">Statement Ledger</div>
-  <div class="ledger-head">
-    <span>Date</span><span>Trades</span><span class="ta-r">Amount</span><span class="ta-r">Balance</span>
+  <div class="collapse-section" id="heatmapSection" style="display:none;">
+    <div class="collapse-header" onclick="toggleCollapse('heatmapSection')">
+      <span>📅 Calendar Heatmap</span>
+      <span class="ch-badge" id="heatmapBadge"></span>
+      <span class="collapse-chevron">▸</span>
+    </div>
+    <div class="collapse-body">
+      <div class="heatmap-dow-row" id="heatmapDow"></div>
+      <div class="heatmap-grid" id="heatmapGrid"></div>
+      <div class="heatmap-legend">
+        <span>Loss</span>
+        <span class="heat-cell loss-3" style="width:12px;height:12px;"></span>
+        <span class="heat-cell loss-1" style="width:12px;height:12px;"></span>
+        <span class="heat-cell" style="width:12px;height:12px;"></span>
+        <span class="heat-cell win-1" style="width:12px;height:12px;"></span>
+        <span class="heat-cell win-3" style="width:12px;height:12px;"></span>
+        <span>Win</span>
+      </div>
+    </div>
   </div>
-  <div id="reportDailyList" class="report-daily-list"></div>
+
+  <div class="collapse-section" id="stratSection">
+    <div class="collapse-header" onclick="toggleCollapse('stratSection')">
+      <span>🎯 Strategy Performance</span>
+      <span class="ch-badge" id="stratBadge"></span>
+      <span class="collapse-chevron">▸</span>
+    </div>
+    <div class="collapse-body"><div id="reportStrategyList"></div></div>
+  </div>
+
+  <div class="collapse-section" id="tagSection">
+    <div class="collapse-header" onclick="toggleCollapse('tagSection')">
+      <span>🏷️ Mistake &amp; Tag Patterns</span>
+      <span class="ch-badge" id="tagBadge"></span>
+      <span class="collapse-chevron">▸</span>
+    </div>
+    <div class="collapse-body"><div id="reportTagList"></div></div>
+  </div>
+
+  <div class="collapse-section" id="ledgerSection">
+    <div class="collapse-header" onclick="toggleCollapse('ledgerSection')">
+      <span>📒 Statement Ledger</span>
+      <span class="ch-badge" id="ledgerBadge"></span>
+      <span class="collapse-chevron">▸</span>
+    </div>
+    <div class="collapse-body">
+      <div class="ledger-head">
+        <span>Date</span><span>Trades</span><span class="ta-r">Amount</span><span class="ta-r">Balance</span>
+      </div>
+      <div id="reportDailyList" class="report-daily-list"></div>
+    </div>
+  </div>
 
   <div class="save-row">
     <button class="btn-cancel" onclick="closeReport()">Close</button>
@@ -1401,6 +1491,7 @@ function computeReportData(){
   let sawStart = false;
   const byDay = {};
   const tagStats = {};
+  const stratStats = {};
   let withdrawalsInPeriod = 0;
   let tradingPnlInPeriod = 0;
   const timeline = buildTimeline();
@@ -1427,6 +1518,13 @@ function computeReportData(){
         tagStats[tag].count += 1;
         tagStats[tag].pnl += Number(tr.pnl)||0;
       });
+      const strat = (tr.strategy||'').trim();
+      if(strat){
+        if(!stratStats[strat]) stratStats[strat] = { count:0, wins:0, pnl:0 };
+        stratStats[strat].count += 1;
+        stratStats[strat].pnl += Number(tr.pnl)||0;
+        if(Number(tr.pnl)>0) stratStats[strat].wins += 1;
+      }
     }else{
       const w = ev.data;
       bal -= Number(w.amount)||0;
@@ -1459,9 +1557,10 @@ function computeReportData(){
   const avgPerDay = activeDays ? totalPnl/activeDays : 0;
 
   const tagList = Object.entries(tagStats).sort((a,b)=> b[1].count-a[1].count);
+  const stratList = Object.entries(stratStats).sort((a,b)=> b[1].pnl-a[1].pnl);
 
   return { label, totalPnl, winRate, count:countTrades, dayEntries, bestDay, worstDay,
-           activeDays, weeklyTargetAmt, openingBalance, closingBalance, avgPerDay, tagList, withdrawalsInPeriod };
+           activeDays, weeklyTargetAmt, openingBalance, closingBalance, avgPerDay, tagList, stratList, withdrawalsInPeriod };
 }
 
 function renderReport(){
@@ -1497,27 +1596,56 @@ function renderReport(){
     pctLabel.style.display = 'none';
   }
 
+  const stratWrap = document.getElementById('reportStrategyList');
+  document.getElementById('stratBadge').textContent = r.stratList.length
+    ? r.stratList.length + ' strateg' + (r.stratList.length===1?'y':'ies')
+    : 'No data';
+  if(!r.stratList.length){
+    stratWrap.innerHTML = '<div class="checklist-empty">No strategy tagged this period — fill in "Setup / Strategy" on a trade to see this.</div>';
+  }else{
+    stratWrap.innerHTML = r.stratList.map(([strat,info],i)=>{
+      const cls = info.pnl>=0?'pos':'neg';
+      const wr = info.count ? Math.round(info.wins/info.count*100) : 0;
+      return `<div class="tag-stat-row" style="animation-delay:${Math.min(i,8)*0.05}s">
+        <span><span class="tsr-name">${esc(strat)}</span><span class="tsr-count">${info.count}x · ${wr}% win</span></span>
+        <span class="tsr-pnl ${cls}">${info.pnl>=0?'+':''}${fmt(info.pnl)}</span>
+      </div>`;
+    }).join('');
+  }
+
   const tagWrap = document.getElementById('reportTagList');
+  document.getElementById('tagBadge').textContent = r.tagList.length
+    ? r.tagList.length + ' tag' + (r.tagList.length===1?'':'s') + ' logged'
+    : 'No data';
   if(!r.tagList.length){
     tagWrap.innerHTML = '<div class="checklist-empty">No tags logged this period — tag trades to spot patterns.</div>';
   }else{
-    tagWrap.innerHTML = r.tagList.map(([tag,info])=>{
+    tagWrap.innerHTML = r.tagList.map(([tag,info],i)=>{
       const cls = info.pnl>=0?'pos':'neg';
-      return `<div class="tag-stat-row">
+      return `<div class="tag-stat-row" style="animation-delay:${Math.min(i,8)*0.05}s">
         <span><span class="tsr-name">${esc(tag)}</span><span class="tsr-count">${info.count}x</span></span>
         <span class="tsr-pnl ${cls}">${info.pnl>=0?'+':''}${fmt(info.pnl)}</span>
       </div>`;
     }).join('');
   }
 
+  document.getElementById('ledgerBadge').textContent = r.activeDays + ' active day' + (r.activeDays!==1?'s':'');
+
+  renderCalendarHeatmap(r);
+
+  // Collapse every section on each render (new period navigation) so the report opens compact
+  ['heatmapSection','stratSection','tagSection','ledgerSection'].forEach(id=>{
+    document.getElementById(id).classList.remove('open');
+  });
+
   const list = document.getElementById('reportDailyList');
   if(!r.dayEntries.length){
     list.innerHTML = '<div class="report-empty">No trades logged in this period.</div>';
   }else{
-    list.innerHTML = r.dayEntries.map(([date,info])=>{
+    list.innerHTML = r.dayEntries.map(([date,info],i)=>{
       const cls = info.pnl>=0?'pos':'neg';
       const d = new Date(date+'T00:00:00');
-      return `<div class="report-day-row">
+      return `<div class="report-day-row" style="animation-delay:${Math.min(i,8)*0.04}s">
         <span class="rd-date">${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</span>
         <span class="rd-count">${info.count} trade${info.count!==1?'s':''}${info.withdrawal ? ' · 💸$'+fmt(info.withdrawal) : ''}</span>
         <span class="rd-pnl ${cls}">${info.pnl>=0?'+':''}${fmt(info.pnl)}</span>
@@ -1525,6 +1653,66 @@ function renderReport(){
       </div>`;
     }).join('');
   }
+}
+
+function toggleCollapse(sectionId){
+  document.getElementById(sectionId).classList.toggle('open');
+}
+
+/* ---------- Calendar Heatmap (month view only) ---------- */
+function heatLevel(pnl, maxAbs){
+  if(!pnl) return 0;
+  const ratio = Math.abs(pnl) / (maxAbs || 1);
+  if(ratio > 0.66) return 3;
+  if(ratio > 0.33) return 2;
+  return 1;
+}
+function renderCalendarHeatmap(r){
+  const wrap = document.getElementById('heatmapSection');
+  if(reportType !== 'month'){
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = 'block';
+
+  const dowWrap = document.getElementById('heatmapDow');
+  if(!dowWrap.dataset.filled){
+    dowWrap.innerHTML = ['S','M','T','W','T','F','S'].map(d=>`<span>${d}</span>`).join('');
+    dowWrap.dataset.filled = '1';
+  }
+
+  const { first, last } = getMonthRange(reportOffset);
+  const dayMap = Object.fromEntries(r.dayEntries);
+  const maxAbs = Math.max(1, ...r.dayEntries.map(([,info])=> Math.abs(info.pnl||0)));
+
+  document.getElementById('heatmapBadge').textContent = r.bestDay
+    ? `Best +$${fmt(r.bestDay.pnl)} · Worst ${r.worstDay.pnl>=0?'+':''}$${fmt(r.worstDay.pnl)}`
+    : 'No data';
+
+  const grid = document.getElementById('heatmapGrid');
+  const cells = [];
+  const leadingBlanks = first.getDay(); // 0=Sun
+  for(let i=0;i<leadingBlanks;i++) cells.push('<div class="heat-cell empty-slot"></div>');
+
+  const totalDays = last.getDate();
+  for(let day=1; day<=totalDays; day++){
+    const dateStr = localDateStr(new Date(first.getFullYear(), first.getMonth(), day));
+    const info = dayMap[dateStr];
+    let cls = '';
+    if(info && info.count>0){
+      const lvl = heatLevel(info.pnl, maxAbs);
+      cls = (info.pnl>=0 ? 'win-' : 'loss-') + Math.max(lvl,1);
+    }
+    const clickable = info && info.count>0;
+    cells.push(`<div class="heat-cell ${cls} ${clickable?'clickable':''}" ${clickable?`onclick='heatCellTap(${JSON.stringify(dateStr)})'`:''}>${day}</div>`);
+  }
+  grid.innerHTML = cells.join('');
+}
+function heatCellTap(dateStr){
+  const info = (computeReportData().dayEntries.find(([d])=>d===dateStr)||[])[1];
+  if(!info) return;
+  const d = new Date(dateStr+'T00:00:00');
+  toast(dfmt(d) + ': ' + info.count + ' trade' + (info.count!==1?'s':'') + ', ' + (info.pnl>=0?'+':'') + '$' + fmt(info.pnl));
 }
 
 /* ---------- PDF Export ---------- */
@@ -1537,66 +1725,147 @@ function exportReportPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:'pt', format:'a4' });
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   const marginX = 40;
-  let y = 50;
 
-  // Header
-  doc.setFont('helvetica','bold'); doc.setFontSize(18);
-  doc.text('Trading Statement', marginX, y);
-  y += 22;
-  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(90);
-  if(settings.traderName){ doc.text(settings.traderName, marginX, y); y += 14; }
-  doc.text((reportType==='week' ? 'Weekly' : 'Monthly') + ' Period: ' + r.label, marginX, y); y += 14;
-  doc.text('Generated: ' + new Date().toLocaleString(), marginX, y); y += 22;
-  doc.setDrawColor(210); doc.line(marginX, y, pageW-marginX, y); y += 20;
+  const BG=[11,14,17], CARD=[21,26,32], CARD2=[30,37,48], LINE=[38,43,51];
+  const GOLD=[240,185,11], GREEN=[14,203,129], RED=[246,70,93], TEXT=[234,236,239], MUTED=[132,142,156];
+  const up = r.totalPnl >= 0;
+  const pnlColor = up ? GREEN : RED;
 
-  // Summary box
-  doc.setTextColor(20); doc.setFont('helvetica','bold'); doc.setFontSize(12);
-  doc.text('Summary', marginX, y); y += 16;
-  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40);
-  const summaryLines = [
-    ['Opening Balance', '$'+fmt(r.openingBalance)],
-    ['Closing Balance', '$'+fmt(r.closingBalance)],
-    ['Net Change', (r.totalPnl>=0?'+':'-') + '$' + fmt(Math.abs(r.totalPnl))],
-    ['Win Rate', r.winRate + '%'],
-    ['Total Trades', String(r.count)],
-    ['Days Traded', String(r.activeDays)],
-    ['Best Day', r.bestDay ? (dfmt(new Date(r.bestDay.date+'T00:00:00')) + '  +$'+fmt(r.bestDay.pnl)) : '-'],
-    ['Worst Day', r.worstDay ? (dfmt(new Date(r.worstDay.date+'T00:00:00')) + '  $'+fmt(r.worstDay.pnl)) : '-'],
-    ['Avg / Day', (r.avgPerDay>=0?'+':'-') + '$' + fmt(Math.abs(r.avgPerDay))],
-    ['Withdrawn', '$'+fmt(r.withdrawalsInPeriod)],
+  function pageBg(){ doc.setFillColor(...BG); doc.rect(0,0,pageW,pageH,'F'); }
+  pageBg();
+
+  let y = 46;
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...GOLD);
+  doc.text('XAUUSD  ·  TRADING PERFORMANCE REPORT', marginX, y);
+  y += 24;
+  doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(...TEXT);
+  doc.text(settings.traderName ? settings.traderName.toUpperCase() : 'TRADING JOURNAL', marginX, y);
+  y += 16;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...MUTED);
+  doc.text((reportType==='week' ? 'Weekly' : 'Monthly') + ' Period: ' + r.label + '   ·   Generated ' + new Date().toLocaleDateString(), marginX, y);
+  y += 26;
+
+  // Hero net result card
+  const heroH = 110;
+  doc.setFillColor(...CARD2);
+  doc.roundedRect(marginX, y, pageW-marginX*2, heroH, 12, 12, 'F');
+  doc.setDrawColor(...(up?GREEN:RED)); doc.setLineWidth(1);
+  doc.roundedRect(marginX, y, pageW-marginX*2, heroH, 12, 12, 'S');
+  const heroCenterX = pageW/2;
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...MUTED);
+  doc.text('NET RESULT THIS PERIOD', heroCenterX, y+26, {align:'center'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(38); doc.setTextColor(...pnlColor);
+  doc.text((up?'+':'-') + '$' + fmt(Math.abs(r.totalPnl)), heroCenterX, y+66, {align:'center'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...MUTED);
+  doc.text(r.winRate + '% win rate  ·  ' + r.count + ' trade' + (r.count!==1?'s':'') + '  ·  ' + r.activeDays + ' active day' + (r.activeDays!==1?'s':''), heroCenterX, y+90, {align:'center'});
+  y += heroH + 18;
+
+  // Weekly target progress bar (week view only)
+  if(reportType==='week' && r.weeklyTargetAmt){
+    const pct = Math.min(Math.max(r.totalPnl/r.weeklyTargetAmt*100,0),100);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...MUTED);
+    doc.text('WEEKLY TARGET PROGRESS', marginX, y);
+    doc.text(Math.round(r.totalPnl/r.weeklyTargetAmt*100) + '% of $'+fmt(r.weeklyTargetAmt), pageW-marginX, y, {align:'right'});
+    y += 8;
+    doc.setFillColor(...CARD); doc.roundedRect(marginX, y, pageW-marginX*2, 10, 5, 5, 'F');
+    if(pct>0){ doc.setFillColor(...GOLD); doc.roundedRect(marginX, y, (pageW-marginX*2)*(pct/100), 10, 5, 5, 'F'); }
+    y += 26;
+  }
+
+  // Key stat tiles
+  const tiles = [
+    ['OPENING', '$'+fmt(r.openingBalance), TEXT],
+    ['CLOSING', '$'+fmt(r.closingBalance), TEXT],
+    ['WITHDRAWN', '$'+fmt(r.withdrawalsInPeriod), TEXT],
+    ['BEST DAY', r.bestDay ? '+$'+fmt(r.bestDay.pnl) : '-', GREEN],
+    ['WORST DAY', r.worstDay ? '$'+fmt(r.worstDay.pnl) : '-', r.worstDay && r.worstDay.pnl<0 ? RED : TEXT],
+    ['AVG / DAY', (r.avgPerDay>=0?'+':'-')+'$'+fmt(Math.abs(r.avgPerDay)), r.avgPerDay>=0?GREEN:RED],
   ];
-  const colW = (pageW - marginX*2) / 2;
-  summaryLines.forEach((row, i) => {
-    const col = i % 2, rowIdx = Math.floor(i/2);
-    const x = marginX + col*colW;
-    const ry = y + rowIdx*16;
-    doc.setTextColor(120); doc.text(row[0], x, ry);
-    doc.setTextColor(20); doc.text(row[1], x + 110, ry);
+  const tileW = (pageW-marginX*2-16)/3, tileH = 48, gap=8;
+  tiles.forEach((t,i)=>{
+    const col = i%3, row = Math.floor(i/3);
+    const x = marginX + col*(tileW+gap);
+    const ty = y + row*(tileH+gap);
+    doc.setFillColor(...CARD); doc.roundedRect(x, ty, tileW, tileH, 8, 8, 'F');
+    doc.setDrawColor(...LINE); doc.roundedRect(x, ty, tileW, tileH, 8, 8, 'S');
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MUTED);
+    doc.text(t[0], x+10, ty+16);
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...t[2]);
+    doc.text(t[1], x+10, ty+34);
   });
-  y += Math.ceil(summaryLines.length/2)*16 + 16;
+  y += Math.ceil(tiles.length/3)*(tileH+gap) + 16;
 
-  // Tag / mistake breakdown
+  // Top strategy callout
+  if(r.stratList.length){
+    const [topName, topInfo] = r.stratList[0];
+    const wr = Math.round(topInfo.wins/topInfo.count*100);
+    doc.setFillColor(...(topInfo.pnl>=0 ? [14,40,32] : [40,17,22]));
+    doc.roundedRect(marginX, y, pageW-marginX*2, 34, 8, 8, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...(topInfo.pnl>=0?GREEN:RED));
+    doc.text('TOP STRATEGY: ' + topName, marginX+12, y+21);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...MUTED);
+    doc.text(topInfo.count+'x · '+wr+'% win · '+(topInfo.pnl>=0?'+':'')+'$'+fmt(topInfo.pnl), pageW-marginX-12, y+21, {align:'right'});
+    y += 46;
+
+    doc.autoTable({
+      startY: y,
+      margin: { left: marginX, right: marginX },
+      head: [['Strategy', 'Trades', 'Win Rate', 'P&L']],
+      body: r.stratList.map(([strat,info]) => [strat, String(info.count), Math.round(info.wins/info.count*100)+'%', (info.pnl>=0?'+':'') + fmt(info.pnl)]),
+      theme: 'plain',
+      styles: { fontSize: 9, cellPadding: 6, textColor: TEXT, lineColor: LINE, lineWidth: 0.5, fillColor: [17,20,24] },
+      headStyles: { fillColor: CARD2, textColor: GOLD, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: CARD },
+      didParseCell: (data)=>{
+        if(data.section==='body' && data.column.index===3){
+          const val = parseFloat(String(data.cell.raw).replace(/[+$]/g,''));
+          data.cell.styles.textColor = val>=0 ? GREEN : RED;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      didDrawPage: (data)=>{ if(data.pageNumber>1) pageBg(); },
+    });
+    y = doc.lastAutoTable.finalY + 20;
+  }
+
+  // Page 2: detailed records
+  doc.addPage();
+  pageBg();
+  y = 46;
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...GOLD);
+  doc.text('DETAILED RECORDS', marginX, y);
+  y += 22;
+
   if(r.tagList.length){
-    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(20);
-    doc.text('Mistake & Tag Patterns', marginX, y); y += 6;
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...TEXT);
+    doc.text('Mistake & Tag Patterns', marginX, y); y += 8;
     doc.autoTable({
       startY: y,
       margin: { left: marginX, right: marginX },
       head: [['Tag', 'Count', 'P&L']],
       body: r.tagList.map(([tag,info]) => [tag, String(info.count), (info.pnl>=0?'+':'') + fmt(info.pnl)]),
-      theme: 'striped',
-      headStyles: { fillColor: [30,30,30] },
-      styles: { fontSize: 9, cellPadding: 5 },
+      theme: 'plain',
+      styles: { fontSize: 9, cellPadding: 6, textColor: TEXT, lineColor: LINE, lineWidth: 0.5, fillColor: [17,20,24] },
+      headStyles: { fillColor: CARD2, textColor: GOLD, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: CARD },
+      didParseCell: (data)=>{
+        if(data.section==='body' && data.column.index===2){
+          const val = parseFloat(String(data.cell.raw).replace(/[+$]/g,''));
+          data.cell.styles.textColor = val>=0 ? GREEN : RED;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      didDrawPage: (data)=>{ if(data.pageNumber>1) pageBg(); },
     });
-    y = doc.lastAutoTable.finalY + 20;
+    y = doc.lastAutoTable.finalY + 22;
   }
 
-  // Daily ledger
-  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(20);
-  doc.text('Statement Ledger', marginX, y); y += 6;
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...TEXT);
+  doc.text('Statement Ledger', marginX, y); y += 8;
   if(!r.dayEntries.length){
-    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(120);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...MUTED);
     doc.text('No trades logged in this period.', marginX, y+14);
   }else{
     doc.autoTable({
@@ -1613,14 +1882,175 @@ function exportReportPDF(){
           '$'+fmt(info.balance),
         ];
       }),
-      theme: 'striped',
-      headStyles: { fillColor: [30,30,30] },
-      styles: { fontSize: 9, cellPadding: 5 },
+      theme: 'plain',
+      styles: { fontSize: 9, cellPadding: 6, textColor: TEXT, lineColor: LINE, lineWidth: 0.5, fillColor: [17,20,24] },
+      headStyles: { fillColor: CARD2, textColor: GOLD, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: CARD },
       columnStyles: { 1:{halign:'right'}, 2:{halign:'right'}, 3:{halign:'right'}, 4:{halign:'right'} },
+      didParseCell: (data)=>{
+        if(data.section==='body' && data.column.index===2){
+          const val = parseFloat(String(data.cell.raw).replace(/[+$]/g,''));
+          data.cell.styles.textColor = val>=0 ? GREEN : RED;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      didDrawPage: (data)=>{ if(data.pageNumber>1) pageBg(); },
     });
   }
 
-  const fname = 'Statement_' + r.label.replace(/[^a-z0-9]+/gi,'_') + '.pdf';
+  // Page 3: full day-by-day trade log — rich cards matching the in-app trade history
+  doc.addPage();
+  pageBg();
+  y = 46;
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...GOLD);
+  doc.text('TRADE-BY-TRADE LOG', marginX, y); y += 24;
+
+  let logStart, logEnd;
+  if(reportType==='week'){
+    const {monday,sunday} = getWeekRangeOffset(reportOffset);
+    logStart = monday; logEnd = sunday;
+  }else{
+    const {first,last} = getMonthRange(reportOffset);
+    logStart = first; logEnd = last;
+  }
+  const periodTrades = trades.filter(tr=>{
+    if(!tr.date) return false;
+    const d = new Date(tr.date+'T00:00:00');
+    return !isNaN(d) && d>=logStart && d<=logEnd;
+  }).sort((a,b)=>{
+    const da = (a.date||'')+'T'+(a.entryTime||'00:00');
+    const db = (b.date||'')+'T'+(b.entryTime||'00:00');
+    return da<db?-1:(da>db?1:0);
+  });
+
+  const cardX = marginX, cardW = pageW - marginX*2;
+  function ensureRoom(neededH){
+    if(y + neededH > pageH - 40){
+      doc.addPage(); pageBg(); y = 46;
+    }
+  }
+
+  if(!periodTrades.length){
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...MUTED);
+    doc.text('No trades logged in this period.', marginX, y+14);
+  }else{
+    let curDay = null;
+    periodTrades.forEach(tr=>{
+      if(tr.date !== curDay){
+        curDay = tr.date;
+        const dayInfo = r.dayEntries.find(([d])=>d===curDay);
+        const dayPnl = dayInfo ? dayInfo[1].pnl : 0;
+        const d = new Date(curDay+'T00:00:00');
+        ensureRoom(30);
+        y += 8;
+        doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...GOLD);
+        doc.text(d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}), marginX, y);
+        doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...(dayPnl>=0?GREEN:RED));
+        doc.text((dayPnl>=0?'+':'')+'$'+fmt(dayPnl), pageW-marginX, y, {align:'right'});
+        y += 14;
+      }
+
+      const isBuy = tr.direction === 'BUY';
+      const dirColor = isBuy ? GREEN : RED;
+      const hasLayers = tr.layers && tr.layers.length > 1;
+      const noteLines = tr.notes ? doc.splitTextToSize(tr.notes, cardW-24) : [];
+
+      // Estimate card height
+      let h = 58; // header + date line + stat row
+      if(hasLayers) h += 14 + tr.layers.length*13;
+      if(tr.strategy) h += 15;
+      if(noteLines.length) h += 6 + noteLines.length*11;
+      if(tr.tags && tr.tags.length) h += 20;
+      h += 12;
+
+      ensureRoom(h);
+      const cardTop = y;
+
+      doc.setFillColor(...CARD);
+      doc.roundedRect(cardX, cardTop, cardW, h, 8, 8, 'F');
+      doc.setDrawColor(...LINE); doc.roundedRect(cardX, cardTop, cardW, h, 8, 8, 'S');
+      doc.setFillColor(...dirColor);
+      doc.rect(cardX, cardTop, 3, h, 'F');
+
+      let cy = cardTop + 20;
+      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...TEXT);
+      doc.text((tr.pair||'-') + '   ' + tr.direction, cardX+16, cy);
+      const pnlUp = Number(tr.pnl) >= 0;
+      doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...(pnlUp?GREEN:RED));
+      doc.text((pnlUp?'+':'')+fmt(tr.pnl), pageW-marginX-12, cy, {align:'right'});
+      cy += 14;
+
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(...MUTED);
+      doc.text((tr.date||'') + (tr.entryTime ? '  ·  '+tr.entryTime+'–'+(tr.exitTime||'') : ''), cardX+16, cy);
+      cy += 16;
+
+      const statColW = (cardW-32)/5;
+      const stats = [
+        [hasLayers?'Avg Entry':'Entry', tr.entry ?? '-'],
+        [hasLayers?'Avg Exit':'Exit', tr.exit ?? '-'],
+        ['Lot', tr.lot ?? '-'],
+        ['SL', tr.sl || '-'],
+        ['TP', tr.tp || '-'],
+      ];
+      stats.forEach((s,i)=>{
+        const sx = cardX+16 + i*statColW;
+        doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...MUTED);
+        doc.text(s[0].toUpperCase(), sx, cy);
+        doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...TEXT);
+        doc.text(String(s[1]), sx, cy+11);
+      });
+      cy += 22;
+
+      if(hasLayers){
+        doc.setDrawColor(...LINE); doc.line(cardX+16, cy-6, cardX+cardW-16, cy-6);
+        tr.layers.forEach((l,i)=>{
+          doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...GOLD);
+          doc.text('L'+(i+1), cardX+16, cy);
+          doc.setFont('helvetica','normal'); doc.setTextColor(...TEXT);
+          doc.text((l.entry||'-')+' -> '+(l.exit||'-'), cardX+38, cy);
+          doc.setTextColor(...MUTED);
+          doc.text((l.lot||'0')+' lot', cardX+16+statColW*2.4, cy);
+          const lp = Number(l.pnl)||0;
+          doc.setFont('helvetica','bold'); doc.setTextColor(...(lp>=0?GREEN:RED));
+          doc.text((lp>=0?'+':'')+fmt(lp), pageW-marginX-12, cy, {align:'right'});
+          cy += 13;
+        });
+        cy += 3;
+      }
+
+      if(tr.strategy){
+        doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...GOLD);
+        doc.text(tr.strategy, cardX+16, cy);
+        cy += 15;
+      }
+
+      if(noteLines.length){
+        doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...TEXT);
+        doc.text(noteLines, cardX+16, cy);
+        cy += noteLines.length*11 + 4;
+      }
+
+      if(tr.tags && tr.tags.length){
+        let tx = cardX+16;
+        doc.setFontSize(7.5);
+        tr.tags.forEach(tag=>{
+          const good = /disciplined|good|patience/i.test(tag);
+          const tw = doc.getTextWidth(tag) + 12;
+          if(tx + tw > cardX+cardW-16){ tx = cardX+16; cy += 16; }
+          doc.setFillColor(...(good ? [14,60,45] : [60,20,26]));
+          doc.roundedRect(tx, cy-9, tw, 14, 7, 7, 'F');
+          doc.setTextColor(...(good ? GREEN : RED));
+          doc.setFont('helvetica','bold');
+          doc.text(tag, tx+6, cy);
+          tx += tw + 5;
+        });
+      }
+
+      y = cardTop + h + 8;
+    });
+  }
+
+  const fname = 'Performance_' + r.label.replace(/[^a-z0-9]+/gi,'_') + '.pdf';
   doc.save(fname);
   toast('PDF saved');
 }

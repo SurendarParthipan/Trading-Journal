@@ -760,7 +760,7 @@ const DEFAULT_CHECKLIST = [
 ];
 const TAG_PRESETS = ['FOMO','Revenge Trade','Moved SL','Overleveraged','Late Entry','Early Exit','No Setup / Impulsive','Ignored Checklist','Disciplined Entry','Good Patience'];
 
-let settings = { key:'main', month:'', traderName:'', capital:250, weeklyTargetPct:100, riskPct:2, rewardPct:2, dailyLossLimitPct:5, checklistItems: DEFAULT_CHECKLIST.slice() };
+let settings = { key:'main', month:'', traderName:'', capital:250, capitalAnchor:'', weeklyTargetPct:100, riskPct:2, rewardPct:2, dailyLossLimitPct:5, checklistItems: DEFAULT_CHECKLIST.slice() };
 let trades = [];
 let withdrawals = [];
 let direction = 'BUY';
@@ -831,19 +831,21 @@ function renderAll(){
 
   let running = Number(settings.capital) || 0;
   let totalPnl = 0, wins = 0;
+  const anchor = settings.capitalAnchor || '';
   const timeline = buildTimeline();
   const withBalance = [];
   const feedItems = [];
   timeline.forEach(ev=>{
+    const inBalanceScope = !anchor || (ev.date||'') >= anchor;
     if(ev.type==='trade'){
-      running += Number(ev.data.pnl)||0;
       totalPnl += Number(ev.data.pnl)||0;
       if(Number(ev.data.pnl) > 0) wins++;
+      if(inBalanceScope) running += Number(ev.data.pnl)||0;
       const item = {...ev.data, balanceAfter: running};
       withBalance.push(item);
       feedItems.push({kind:'trade', data:item});
     }else{
-      running -= Number(ev.data.amount)||0;
+      if(inBalanceScope) running -= Number(ev.data.amount)||0;
       feedItems.push({kind:'withdrawal', data:{...ev.data, balanceAfter: running}});
     }
   });
@@ -876,9 +878,18 @@ function buildTimeline(){
   return events;
 }
 
+// Only events dated on/after the last time Starting Capital was set — prevents
+// re-summing trades that are already baked into a previously-synced capital value.
+function balanceEvents(){
+  const anchor = settings.capitalAnchor || '';
+  const timeline = buildTimeline();
+  if(!anchor) return timeline;
+  return timeline.filter(ev => (ev.date||'') >= anchor);
+}
+
 function computeCurrentBalance(){
   let running = Number(settings.capital) || 0;
-  buildTimeline().forEach(ev=>{
+  balanceEvents().forEach(ev=>{
     if(ev.type==='trade') running += Number(ev.data.pnl)||0;
     else running -= Number(ev.data.amount)||0;
   });
@@ -1268,11 +1279,14 @@ function closeSettings(){
 }
 
 async function saveSettings(){
+  const newCapital = Number(document.getElementById('setCapital').value)||0;
+  const capitalChanged = newCapital !== Number(settings.capital);
   settings = {
     key:'main',
     month: document.getElementById('setMonth').value,
     traderName: document.getElementById('setTraderName').value,
-    capital: Number(document.getElementById('setCapital').value)||0,
+    capital: newCapital,
+    capitalAnchor: capitalChanged ? localDateStr(new Date()) : (settings.capitalAnchor || ''),
     weeklyTargetPct: Number(document.getElementById('setWeeklyPct').value)||0,
     riskPct: Number(document.getElementById('setRiskPct').value)||0,
     rewardPct: Number(document.getElementById('setRewardPct').value)||0,
@@ -1280,7 +1294,7 @@ async function saveSettings(){
     checklistItems: pendingChecklistSettingItems.map(s=>s.trim()).filter(Boolean),
   };
   await idbPut('settings', settings);
-  toast('Settings saved');
+  toast(capitalChanged ? 'Settings saved — balance now tracks fresh from today' : 'Settings saved');
   closeSettings();
   renderAll();
 }
@@ -1494,20 +1508,24 @@ function computeReportData(){
   const stratStats = {};
   let withdrawalsInPeriod = 0;
   let tradingPnlInPeriod = 0;
+  const anchor = settings.capitalAnchor || '';
   const timeline = buildTimeline();
   timeline.forEach(ev=>{
     if(!ev.date) return;
     const d = new Date(ev.date+'T00:00:00');
     if(isNaN(d) || d>end) return;
+    const inBalanceScope = !anchor || ev.date >= anchor;
     if(d < start){
-      if(ev.type==='trade') bal += Number(ev.data.pnl)||0;
-      else bal -= Number(ev.data.amount)||0;
+      if(inBalanceScope){
+        if(ev.type==='trade') bal += Number(ev.data.pnl)||0;
+        else bal -= Number(ev.data.amount)||0;
+      }
       return;
     }
     if(!sawStart){ openingBalance = bal; sawStart = true; }
     if(ev.type==='trade'){
       const tr = ev.data;
-      bal += Number(tr.pnl)||0;
+      if(inBalanceScope) bal += Number(tr.pnl)||0;
       tradingPnlInPeriod += Number(tr.pnl)||0;
       if(!byDay[tr.date]) byDay[tr.date] = { pnl:0, count:0, balance:0, withdrawal:0 };
       byDay[tr.date].pnl += Number(tr.pnl)||0;
@@ -1527,7 +1545,7 @@ function computeReportData(){
       }
     }else{
       const w = ev.data;
-      bal -= Number(w.amount)||0;
+      if(inBalanceScope) bal -= Number(w.amount)||0;
       withdrawalsInPeriod += Number(w.amount)||0;
       if(!byDay[w.date]) byDay[w.date] = { pnl:0, count:0, balance:0, withdrawal:0 };
       byDay[w.date].withdrawal += Number(w.amount)||0;

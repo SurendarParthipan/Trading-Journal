@@ -856,7 +856,7 @@ function renderAll(){
   document.getElementById('statWin').textContent = trades.length ? Math.round(wins/trades.length*100)+'%' : '0%';
   document.getElementById('statCount').textContent = trades.length;
 
-  drawCandles(withBalance);
+  drawCandles();
   renderList(feedItems);
   renderWeeklyGoal();
   renderRiskCard();
@@ -1113,29 +1113,35 @@ function renderRiskCard(){
   document.getElementById('profitAmt').textContent = '$'+fmt(fixedCapital*rewardPct/100);
 }
 
-function drawCandles(withBalance){
+function drawCandles(){
   const lineWrap = document.getElementById('sparkLineWrap');
   const dotsWrap = document.getElementById('candles');
   lineWrap.innerHTML = '';
   dotsWrap.innerHTML = '';
-  if(!withBalance.length) return;
+  if(!trades.length) return;
 
-  // Group chronological trades into per-day buckets: closing balance + that day's net P&L
+  // This chart shows day-to-day TREND, not your official capital figure — so it
+  // always replays full trade history regardless of any Starting Capital reset/sync.
+  // That keeps it showing real up/down movement even right after you sync capital,
+  // instead of flattening out because old trades got excluded from the balance.
+  const sorted = [...trades].sort((a,b)=>{
+    const da = (a.date||'')+'T'+(a.entryTime||'00:00');
+    const db = (b.date||'')+'T'+(b.entryTime||'00:00');
+    return da<db ? -1 : (da>db ? 1 : 0);
+  });
   const dayGroups = [];
   let curDate = null, curGroup = null;
-  withBalance.forEach(tr=>{
+  sorted.forEach(tr=>{
     const d = tr.date || '';
     if(d !== curDate){
-      curGroup = { date: d, items: [] };
+      curGroup = { date: d, pnl: 0 };
       dayGroups.push(curGroup);
       curDate = d;
     }
-    curGroup.items.push(tr);
+    curGroup.pnl += Number(tr.pnl)||0;
   });
-  const days = dayGroups.map(dg => ({
-    close: dg.items[dg.items.length-1].balanceAfter,
-    pnl: dg.items.reduce((s,it)=> s + (Number(it.pnl)||0), 0),
-  }));
+  let cum = 0;
+  const days = dayGroups.map(dg=>{ cum += dg.pnl; return { close: cum, pnl: dg.pnl }; });
   const recent = days.slice(-10);
   if(!recent.length) return;
 

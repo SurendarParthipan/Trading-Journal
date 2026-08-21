@@ -1127,6 +1127,9 @@ const DEFAULT_CHECKLIST = [
   'No revenge trade after a loss'
 ];
 const TAG_PRESETS = ['FOMO','Revenge Trade','Moved SL','Overleveraged','Late Entry','Early Exit','No Setup / Impulsive','Ignored Checklist','Disciplined Entry','Good Patience'];
+// Tags that flag a discipline slip, not a strategy — even when they end up profitable,
+// the recap should never tell you to repeat them on purpose.
+const MISTAKE_TAGS = ['FOMO','Revenge Trade','Moved SL','Overleveraged','Late Entry','Early Exit','No Setup / Impulsive','Ignored Checklist'];
 
 /* ---------- Daily Recap coaching copy ---------- */
 const TAG_INSIGHTS = {
@@ -1763,13 +1766,19 @@ function buildPatternInsights(){
   const lines = [];
   const worst = extremeTag(stats,'worst');
   const best = extremeTag(stats,'best');
+  let worstReported = false;
   if(worst && worst.pnl < -0.009){
     const tagWinRate = Math.round(worst.wins/worst.count*100);
     lines.push({type:'warn', text:`Your costliest habit: "${worst.tag}" — -$${fmt(Math.abs(worst.pnl))} across ${worst.count} trades (${tagWinRate}% win rate vs your ${stats.winRate}% overall).`});
+    worstReported = true;
   }
-  if(best && best.pnl > 0.009 && (!worst || best.tag!==worst.tag)){
+  if(best && best.pnl > 0.009 && !(worstReported && best.tag===worst.tag)){
     const tagWinRate = Math.round(best.wins/best.count*100);
-    lines.push({type:'good', text:`Your strongest habit: "${best.tag}" — +$${fmt(best.pnl)} across ${best.count} trades (${tagWinRate}% win rate). Keep doing this on purpose.`});
+    if(MISTAKE_TAGS.includes(best.tag)){
+      lines.push({type:'warn', text:`"${best.tag}" trades came out profitable (+$${fmt(best.pnl)} across ${best.count}, ${tagWinRate}% win rate) — but that's the market being forgiving, not the habit being good. Worth asking what those trades would've made if you'd stuck to the plan instead of repeating "${best.tag}" on purpose.`});
+    }else{
+      lines.push({type:'good', text:`Your strongest habit: "${best.tag}" — +$${fmt(best.pnl)} across ${best.count} trades (${tagWinRate}% win rate). Keep doing this on purpose.`});
+    }
   }
   if(stats.avgHoldWin!==null && stats.avgHoldLoss!==null && stats.holdWinCount>=3 && stats.holdLossCount>=3){
     if(stats.avgHoldLoss > stats.avgHoldWin*1.4){

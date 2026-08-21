@@ -458,6 +458,7 @@
   .trade-card.buy::before{background:var(--green-grad);box-shadow:0 0 14px rgba(18,218,142,.6);}
   .trade-card.sell::before{background:var(--red-grad);box-shadow:0 0 14px rgba(255,92,122,.6);}
   .trade-card.withdrawal::before{background:var(--violet-grad);box-shadow:0 0 14px rgba(139,92,246,.6);}
+  .trade-card.topup::before{background:var(--green-grad);box-shadow:0 0 14px rgba(18,218,142,.6);}
   .tc-wtag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:var(--r-sm);background:var(--violet-soft);color:#d8caff;letter-spacing:.04em;text-transform:uppercase;margin-left:6px;}
   .tc-top{display:flex;justify-content:space-between;align-items:baseline;}
   .tc-pair{font-weight:700;font-size:14.5px;letter-spacing:-.01em;font-family:'Space Grotesk',sans-serif;}
@@ -501,9 +502,11 @@
     flex:0 0 auto;
     background:linear-gradient(160deg, var(--panel) 0%, var(--panel-2) 100%);
     color:var(--gold);border:1px solid rgba(123,114,255,.4);border-radius:var(--r-lg);
-    padding:17px 18px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;
-    box-shadow:var(--shadow-card-lg);cursor:pointer;
+    padding:17px 15px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13.5px;
+    box-shadow:var(--shadow-card-lg);cursor:pointer;white-space:nowrap;
   }
+  .fab-secondary.topup{color:var(--green);border-color:rgba(18,218,142,.4);}
+  .fab-secondary.topup:hover{border-color:rgba(18,218,142,.6);}
 
   /* ---------- Bottom sheets ---------- */
   .sheet-backdrop{position:fixed;inset:0;background:rgba(3,4,6,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;visibility:hidden;transition:opacity .3s ease;z-index:20;}
@@ -813,6 +816,7 @@
 
 <div class="fab-row">
   <button class="fab" onclick="openSheet()">+ New Trade</button>
+  <button class="fab-secondary topup" onclick="openTopupSheet()">💰 Top Up</button>
   <button class="fab-secondary" onclick="openWithdrawSheet()">💸 Withdraw</button>
 </div>
 
@@ -911,6 +915,22 @@
   </div>
 </div>
 
+<div class="sheet-backdrop" id="topupBackdrop" onclick="closeTopupSheet()"></div>
+<div class="sheet" id="topupSheet">
+  <div class="sheet-handle"></div>
+  <h2 id="topupSheetTitle">Top Up</h2>
+  <div class="import-intro">Blown the account or just adding fresh capital? Log it here — it updates your Capital Balance without touching your trading stats, so your win rate and P&amp;L analytics stay based on actual trades only.</div>
+  <div class="form-grid">
+    <div class="field"><label>Date</label><input id="tuDate" type="date"></div>
+    <div class="field"><label>Amount ($)</label><input id="tuAmount" type="number" inputmode="decimal" placeholder="100"></div>
+    <div class="field full"><label>Note (optional)</label><input id="tuNote" type="text" placeholder="e.g. re-funded after blown account"></div>
+  </div>
+  <div class="save-row">
+    <button class="btn-cancel" onclick="closeTopupSheet()">Cancel</button>
+    <button class="btn-save" onclick="saveTopup()">Save Top Up</button>
+  </div>
+</div>
+
 <div class="sheet-backdrop" id="recapBackdrop" onclick="closeDailyRecap()"></div>
 <div class="sheet" id="recapSheet">
   <div class="sheet-handle"></div>
@@ -968,6 +988,7 @@
     <div class="report-stat"><div class="v" id="repWorstDay">-</div><div class="l">Worst Day</div></div>
     <div class="report-stat"><div class="v" id="repAvgDay">$0</div><div class="l">Avg / Day</div></div>
     <div class="report-stat"><div class="v" id="repWithdrawals">$0</div><div class="l">Withdrawn</div></div>
+    <div class="report-stat"><div class="v" id="repToppedUp">$0</div><div class="l">Topped Up</div></div>
   </div>
 
   <div class="collapse-section" id="heatmapSection" style="display:none;">
@@ -1072,13 +1093,14 @@
 let db;
 function openDB(){
   return new Promise((resolve,reject)=>{
-    const req = indexedDB.open('tradeJournalDB', 3);
+    const req = indexedDB.open('tradeJournalDB', 4);
     req.onupgradeneeded = e => {
       const d = e.target.result;
       if(!d.objectStoreNames.contains('trades')) d.createObjectStore('trades',{keyPath:'id'});
       if(!d.objectStoreNames.contains('settings')) d.createObjectStore('settings',{keyPath:'key'});
       if(!d.objectStoreNames.contains('withdrawals')) d.createObjectStore('withdrawals',{keyPath:'id'});
       if(!d.objectStoreNames.contains('weeklyReviews')) d.createObjectStore('weeklyReviews',{keyPath:'weekId'});
+      if(!d.objectStoreNames.contains('topups')) d.createObjectStore('topups',{keyPath:'id'});
     };
     req.onsuccess = e => { db = e.target.result; resolve(db); };
     req.onerror = e => reject(e);
@@ -1148,6 +1170,7 @@ const TAG_INSIGHTS = {
 let settings = { key:'main', month:'', traderName:'', capital:250, capitalAnchor:'', weeklyTargetPct:100, riskPct:2, rewardPct:2, dailyLossLimitPct:5, checklistItems: DEFAULT_CHECKLIST.slice(), liteMode:false, lastRecapSeenDate:'', lastWeeklyReviewSeenWeek:'' };
 let trades = [];
 let withdrawals = [];
+let topups = [];
 let weeklyReviews = [];
 let direction = 'BUY';
 let editingId = null;
@@ -1165,6 +1188,7 @@ async function init(){
     trades = await idbGetAll('trades');
     sortTrades();
     withdrawals = await idbGetAll('withdrawals');
+    topups = await idbGetAll('topups');
     weeklyReviews = await idbGetAll('weeklyReviews');
     updateStorageHint();
   }catch(e){
@@ -1235,6 +1259,9 @@ function renderAll(){
       const item = {...ev.data, balanceAfter: running};
       withBalance.push(item);
       feedItems.push({kind:'trade', data:item});
+    }else if(ev.type==='topup'){
+      if(inBalanceScope) running += Number(ev.data.amount)||0;
+      feedItems.push({kind:'topup', data:{...ev.data, balanceAfter: running}});
     }else{
       if(inBalanceScope) running -= Number(ev.data.amount)||0;
       feedItems.push({kind:'withdrawal', data:{...ev.data, balanceAfter: running}});
@@ -1259,6 +1286,7 @@ function buildTimeline(){
   const events = [];
   trades.forEach(tr => events.push({ type:'trade', date: tr.date||'', time: tr.entryTime||'00:00', createdAt: tr.createdAt||0, data: tr }));
   withdrawals.forEach(w => events.push({ type:'withdrawal', date: w.date||'', time:'23:59', createdAt: w.createdAt||0, data: w }));
+  topups.forEach(t => events.push({ type:'topup', date: t.date||'', time:'23:58', createdAt: t.createdAt||0, data: t }));
   events.sort((a,b)=>{
     const da = (a.date||'') + 'T' + (a.time||'00:00');
     const db = (b.date||'') + 'T' + (b.time||'00:00');
@@ -1282,6 +1310,7 @@ function computeCurrentBalance(){
   let running = Number(settings.capital) || 0;
   balanceEvents().forEach(ev=>{
     if(ev.type==='trade') running += Number(ev.data.pnl)||0;
+    else if(ev.type==='topup') running += Number(ev.data.amount)||0;
     else running -= Number(ev.data.amount)||0;
   });
   return running;
@@ -1602,6 +1631,25 @@ function renderList(feedItems){
         <div class="tc-actions">
           <button onclick="editWithdrawal('${w.id}')">Edit</button>
           <button onclick="deleteWithdrawal('${w.id}')">Delete</button>
+        </div>
+      `;
+      list.appendChild(card);
+      return;
+    }
+    if(item.kind === 'topup'){
+      const t = item.data;
+      card.className = 'trade-card topup';
+      card.innerHTML = `
+        <div class="tc-top">
+          <div><span class="tc-pair">💰 Top Up</span></div>
+          <div class="tc-pnl pos">+$${fmt(t.amount)}</div>
+        </div>
+        <div class="tc-date">${t.date || ''}</div>
+        ${t.note ? `<div class="tc-notes">${esc(t.note)}</div>` : ''}
+        <div class="tc-mid" style="grid-template-columns:1fr;"><div><span>Balance After</span>$${fmt(t.balanceAfter)}</div></div>
+        <div class="tc-actions">
+          <button onclick="editTopup('${t.id}')">Edit</button>
+          <button onclick="deleteTopup('${t.id}')">Delete</button>
         </div>
       `;
       list.appendChild(card);
@@ -2490,9 +2538,14 @@ function computeReportData(){
   const tagStats = {};
   const stratStats = {};
   let withdrawalsInPeriod = 0;
+  let toppedUpInPeriod = 0;
   let tradingPnlInPeriod = 0;
   const anchor = settings.capitalAnchor || '';
   const timeline = buildTimeline();
+  const dayRow = (date) => {
+    if(!byDay[date]) byDay[date] = { pnl:0, count:0, balance:0, withdrawal:0, topup:0 };
+    return byDay[date];
+  };
   timeline.forEach(ev=>{
     if(!ev.date) return;
     const d = new Date(ev.date+'T00:00:00');
@@ -2501,6 +2554,7 @@ function computeReportData(){
     if(d < start){
       if(inBalanceScope){
         if(ev.type==='trade') bal += Number(ev.data.pnl)||0;
+        else if(ev.type==='topup') bal += Number(ev.data.amount)||0;
         else bal -= Number(ev.data.amount)||0;
       }
       return;
@@ -2510,10 +2564,10 @@ function computeReportData(){
       const tr = ev.data;
       if(inBalanceScope) bal += Number(tr.pnl)||0;
       tradingPnlInPeriod += Number(tr.pnl)||0;
-      if(!byDay[tr.date]) byDay[tr.date] = { pnl:0, count:0, balance:0, withdrawal:0 };
-      byDay[tr.date].pnl += Number(tr.pnl)||0;
-      byDay[tr.date].count += 1;
-      byDay[tr.date].balance = bal;
+      const row = dayRow(tr.date);
+      row.pnl += Number(tr.pnl)||0;
+      row.count += 1;
+      row.balance = bal;
       (tr.tags||[]).forEach(tag=>{
         if(!tagStats[tag]) tagStats[tag] = { count:0, pnl:0 };
         tagStats[tag].count += 1;
@@ -2526,13 +2580,20 @@ function computeReportData(){
         stratStats[strat].pnl += Number(tr.pnl)||0;
         if(Number(tr.pnl)>0) stratStats[strat].wins += 1;
       }
+    }else if(ev.type==='topup'){
+      const t = ev.data;
+      if(inBalanceScope) bal += Number(t.amount)||0;
+      toppedUpInPeriod += Number(t.amount)||0;
+      const row = dayRow(t.date);
+      row.topup += Number(t.amount)||0;
+      row.balance = bal;
     }else{
       const w = ev.data;
       if(inBalanceScope) bal -= Number(w.amount)||0;
       withdrawalsInPeriod += Number(w.amount)||0;
-      if(!byDay[w.date]) byDay[w.date] = { pnl:0, count:0, balance:0, withdrawal:0 };
-      byDay[w.date].withdrawal += Number(w.amount)||0;
-      byDay[w.date].balance = bal;
+      const row = dayRow(w.date);
+      row.withdrawal += Number(w.amount)||0;
+      row.balance = bal;
     }
   });
   if(!sawStart) openingBalance = bal;
@@ -2561,7 +2622,7 @@ function computeReportData(){
   const stratList = Object.entries(stratStats).sort((a,b)=> b[1].pnl-a[1].pnl);
 
   return { label, totalPnl, winRate, count:countTrades, dayEntries, bestDay, worstDay,
-           activeDays, weeklyTargetAmt, openingBalance, closingBalance, avgPerDay, tagList, stratList, withdrawalsInPeriod };
+           activeDays, weeklyTargetAmt, openingBalance, closingBalance, avgPerDay, tagList, stratList, withdrawalsInPeriod, toppedUpInPeriod };
 }
 
 function renderReport(){
@@ -2581,6 +2642,7 @@ function renderReport(){
   document.getElementById('repActiveDays').textContent = r.activeDays;
   document.getElementById('repAvgDay').textContent = (r.avgPerDay>=0?'+':'-') + '$' + fmt(Math.abs(r.avgPerDay));
   document.getElementById('repWithdrawals').textContent = '$' + fmt(r.withdrawalsInPeriod);
+  document.getElementById('repToppedUp').textContent = '$' + fmt(r.toppedUpInPeriod);
 
   const barTrack = document.getElementById('reportBarTrack');
   const barFill = document.getElementById('reportBarFill');
@@ -2648,7 +2710,7 @@ function renderReport(){
       const d = new Date(date+'T00:00:00');
       return `<div class="report-day-row" style="animation-delay:${Math.min(i,8)*0.04}s">
         <span class="rd-date">${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</span>
-        <span class="rd-count">${info.count} trade${info.count!==1?'s':''}${info.withdrawal ? ' · 💸$'+fmt(info.withdrawal) : ''}</span>
+        <span class="rd-count">${info.count} trade${info.count!==1?'s':''}${info.withdrawal ? ' · 💸$'+fmt(info.withdrawal) : ''}${info.topup ? ' · 💰$'+fmt(info.topup) : ''}</span>
         <span class="rd-pnl ${cls}">${info.pnl>=0?'+':''}${fmt(info.pnl)}</span>
         <span class="rd-bal">$${fmt(info.balance)}</span>
       </div>`;
@@ -2780,6 +2842,7 @@ function exportReportPDF(){
     ['OPENING', '$'+fmt(r.openingBalance), TEXT],
     ['CLOSING', '$'+fmt(r.closingBalance), TEXT],
     ['WITHDRAWN', '$'+fmt(r.withdrawalsInPeriod), TEXT],
+    ['TOPPED UP', '$'+fmt(r.toppedUpInPeriod), TEXT],
     ['BEST DAY', r.bestDay ? '+$'+fmt(r.bestDay.pnl) : '-', GREEN],
     ['WORST DAY', r.worstDay ? '$'+fmt(r.worstDay.pnl) : '-', r.worstDay && r.worstDay.pnl<0 ? RED : TEXT],
     ['AVG / DAY', (r.avgPerDay>=0?'+':'-')+'$'+fmt(Math.abs(r.avgPerDay)), r.avgPerDay>=0?GREEN:RED],
@@ -2872,7 +2935,7 @@ function exportReportPDF(){
     doc.autoTable({
       startY: y,
       margin: { left: marginX, right: marginX },
-      head: [['Date', 'Trades', 'Amount', 'Withdrawn', 'Balance']],
+      head: [['Date', 'Trades', 'Amount', 'Withdrawn', 'Topped Up', 'Balance']],
       body: r.dayEntries.map(([date,info]) => {
         const d = new Date(date+'T00:00:00');
         return [
@@ -2880,6 +2943,7 @@ function exportReportPDF(){
           String(info.count),
           (info.pnl>=0?'+':'') + fmt(info.pnl),
           info.withdrawal ? '-$'+fmt(info.withdrawal) : '-',
+          info.topup ? '+$'+fmt(info.topup) : '-',
           '$'+fmt(info.balance),
         ];
       }),
@@ -2887,7 +2951,7 @@ function exportReportPDF(){
       styles: { fontSize: 9, cellPadding: 6, textColor: TEXT, lineColor: LINE, lineWidth: 0.5, fillColor: [17,20,24] },
       headStyles: { fillColor: CARD2, textColor: GOLD, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: CARD },
-      columnStyles: { 1:{halign:'right'}, 2:{halign:'right'}, 3:{halign:'right'}, 4:{halign:'right'} },
+      columnStyles: { 1:{halign:'right'}, 2:{halign:'right'}, 3:{halign:'right'}, 4:{halign:'right'}, 5:{halign:'right'} },
       didParseCell: (data)=>{
         if(data.section==='body' && data.column.index===2){
           const val = parseFloat(String(data.cell.raw).replace(/[+$]/g,''));
@@ -3189,6 +3253,59 @@ async function deleteWithdrawal(id){
   renderAll();
 }
 
+/* ---------- Top Ups (re-funding after a blown account, or adding fresh capital) ---------- */
+let editingTopupId = null;
+
+function openTopupSheet(){
+  editingTopupId = null;
+  document.getElementById('topupSheetTitle').textContent = 'Top Up';
+  document.getElementById('tuDate').value = localDateStr(new Date());
+  document.getElementById('tuAmount').value = '';
+  document.getElementById('tuNote').value = '';
+  document.getElementById('topupBackdrop').classList.add('open');
+  document.getElementById('topupSheet').classList.add('open');
+}
+function closeTopupSheet(){
+  document.getElementById('topupBackdrop').classList.remove('open');
+  document.getElementById('topupSheet').classList.remove('open');
+}
+function editTopup(id){
+  const t = topups.find(x=>x.id===id);
+  if(!t) return;
+  editingTopupId = id;
+  document.getElementById('topupSheetTitle').textContent = 'Edit Top Up';
+  document.getElementById('tuDate').value = t.date || localDateStr(new Date());
+  document.getElementById('tuAmount').value = t.amount || '';
+  document.getElementById('tuNote').value = t.note || '';
+  document.getElementById('topupBackdrop').classList.add('open');
+  document.getElementById('topupSheet').classList.add('open');
+}
+async function saveTopup(){
+  const amount = Number(document.getElementById('tuAmount').value)||0;
+  const date = document.getElementById('tuDate').value || localDateStr(new Date());
+  if(amount<=0){ toast('Enter a top up amount'); return; }
+  const t = {
+    id: editingTopupId || ('tu_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)),
+    createdAt: editingTopupId ? (topups.find(x=>x.id===editingTopupId)?.createdAt || Date.now()) : Date.now(),
+    date,
+    amount,
+    note: document.getElementById('tuNote').value,
+  };
+  await idbPut('topups', t);
+  const idx = topups.findIndex(x=>x.id===t.id);
+  if(idx>=0) topups[idx] = t; else topups.push(t);
+  closeTopupSheet();
+  renderAll();
+  updateStorageHint();
+  toast('Top up saved');
+}
+async function deleteTopup(id){
+  topups = topups.filter(t=>t.id!==id);
+  await idbDelete('topups', id);
+  toast('Top up deleted');
+  renderAll();
+}
+
 async function saveTrade(){
   const checklistItemsNow = settings.checklistItems || [];
   const allChecked = checklistItemsNow.length ? pendingChecklist.slice(0,checklistItemsNow.length).every(Boolean) : true;
@@ -3247,7 +3364,7 @@ async function saveTrade(){
 
 /* ---------- Backup / Restore ---------- */
 async function exportBackup(){
-  const data = { settings, trades, withdrawals, weeklyReviews, exportedAt: new Date().toISOString() };
+  const data = { settings, trades, withdrawals, topups, weeklyReviews, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -3266,14 +3383,16 @@ async function importBackup(event){
   const text = await file.text();
   try{
     const data = JSON.parse(text);
-    if(!confirm('This will replace all current trades, withdrawals, and settings with the backup file. Continue?')) return;
+    if(!confirm('This will replace all current trades, withdrawals, top ups, and settings with the backup file. Continue?')) return;
     await idbClear('trades');
     await idbClear('settings');
     await idbClear('withdrawals');
+    await idbClear('topups');
     await idbClear('weeklyReviews');
     if(data.settings) await idbPut('settings', data.settings);
     if(data.trades) for(const t of data.trades) await idbPut('trades', t);
     if(data.withdrawals) for(const w of data.withdrawals) await idbPut('withdrawals', w);
+    if(data.topups) for(const t of data.topups) await idbPut('topups', t);
     if(data.weeklyReviews) for(const w of data.weeklyReviews) await idbPut('weeklyReviews', w);
     await init();
     toast('Backup restored');

@@ -395,6 +395,25 @@
   .report-day-row .rd-pnl{font-family:'JetBrains Mono',monospace;font-weight:700;text-align:right;}
   .report-day-row .rd-bal{font-family:'JetBrains Mono',monospace;color:var(--text);text-align:right;}
 
+  /* ---------- Capital History (dedicated screen) ---------- */
+  .ckpt-list{display:flex;flex-direction:column;gap:7px;margin-top:4px;}
+  .ckpt-head{display:grid;grid-template-columns:1.3fr 1fr auto;gap:4px;padding:0 11px;margin-bottom:2px;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;}
+  .ckpt-row{
+    display:grid;grid-template-columns:1.3fr 1fr auto;gap:8px;align-items:center;
+    background:linear-gradient(160deg,var(--glass),var(--glass-2));border:1px solid var(--glass-border);border-radius:var(--r-sm);padding:11px;
+    box-shadow:var(--shadow-card);animation:fadeSlideUp .3s var(--ease-spring) both;transition:transform .15s var(--ease-spring), border-color .2s ease;
+  }
+  .ckpt-row:hover{border-color:rgba(123,114,255,.35);transform:translateX(2px);}
+  .ckpt-row .ck-date{font-family:'JetBrains Mono',monospace;color:var(--text);font-size:12px;font-weight:600;}
+  .ckpt-row .ck-cap{font-family:'JetBrains Mono',monospace;color:var(--gold);font-weight:700;font-size:13px;}
+  .ckpt-row .ck-actions{display:flex;gap:6px;}
+  .ckpt-row .ck-actions button{
+    font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;padding:5px 10px;border-radius:var(--r-sm);
+    background:var(--glass-2);border:1px solid var(--glass-border);color:var(--text);cursor:pointer;
+  }
+  .ckpt-row .ck-actions button:hover{border-color:rgba(123,114,255,.4);}
+  .ckpt-intro{font-size:12.5px;color:var(--muted);line-height:1.5;padding:2px 2px 4px;}
+
   /* ---------- Quick actions ---------- */
   .quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:6px 16px 0;}
   .qa-btn{
@@ -678,7 +697,10 @@
       <p class="sub" id="monthLabel">Loading...</p>
     </div>
   </div>
-  <button class="icon-btn" onclick="openSettings()" aria-label="Settings">⚙</button>
+  <div style="display:flex;gap:8px;">
+    <button class="icon-btn" onclick="openCapitalHistorySheet()" aria-label="Capital History">📜</button>
+    <button class="icon-btn" onclick="openSettings()" aria-label="Settings">⚙</button>
+  </div>
 </header>
 
 <div class="balance-wrap">
@@ -778,6 +800,9 @@
         <div class="checklist-empty" style="margin-top:5px;">Type your new capital above first, then tap this. It resets Total P&amp;L, Win Rate and Trades to zero and starts Balance from that new capital — your existing trades and Reports stay exactly as they are, always viewable for reference.</div>
       </div>
       <div class="field"><label>Weekly Target %</label><input id="setWeeklyPct" type="number" inputmode="decimal" placeholder="e.g. 100"></div>
+      <div class="field full">
+        <div class="checklist-empty" style="margin-top:-4px;">Looking for Capital History? Tap the 📜 icon at the top of the app, next to ⚙ Settings.</div>
+      </div>
 
       <div class="settings-subhead">🛡️ Risk Management</div>
       <div class="field"><label>Risk % per Trade</label><input id="setRiskPct" type="number" inputmode="decimal" placeholder="e.g. 2"></div>
@@ -930,6 +955,36 @@
   <div class="save-row">
     <button class="btn-cancel" onclick="closeTopupSheet()">Cancel</button>
     <button class="btn-save" onclick="saveTopup()">Save Top Up</button>
+  </div>
+</div>
+
+<div class="sheet-backdrop" id="capitalHistoryBackdrop" onclick="closeCapitalHistorySheet()"></div>
+<div class="sheet" id="capitalHistorySheet">
+  <div class="sheet-handle"></div>
+  <h2>📜 Capital History</h2>
+  <div class="ckpt-intro">The real capital figure at each point in time — Reports use this to reconstruct your actual balance on past days instead of copying today's number backward. Add every reset or sync you remember; the more checkpoints, the more accurate your history.</div>
+
+  <div class="ckpt-head"><span>Date</span><span>Capital</span><span></span></div>
+  <div class="ckpt-list" id="capitalHistoryList"></div>
+
+  <div class="save-row">
+    <button class="btn-cancel" onclick="closeCapitalHistorySheet()">Close</button>
+    <button class="btn-save" onclick="openCapitalCheckpointSheet()">+ Add Checkpoint</button>
+  </div>
+</div>
+
+<div class="sheet-backdrop" id="ckptBackdrop" onclick="closeCapitalCheckpointSheet()"></div>
+<div class="sheet" id="ckptSheet">
+  <div class="sheet-handle"></div>
+  <h2 id="ckptSheetTitle">Add Capital Checkpoint</h2>
+  <div class="import-intro">Record what your capital literally was on a given date — e.g. what you started with before your first sync, or an old reset you remember. Reports will use this as a real anchor point instead of guessing.</div>
+  <div class="form-grid">
+    <div class="field"><label>Date</label><input id="ckptDate" type="date"></div>
+    <div class="field"><label>Capital ($)</label><input id="ckptCapital" type="number" inputmode="decimal" placeholder="250"></div>
+  </div>
+  <div class="save-row">
+    <button class="btn-cancel" onclick="closeCapitalCheckpointSheet()">Cancel</button>
+    <button class="btn-save" onclick="saveCapitalCheckpoint()">Save Checkpoint</button>
   </div>
 </div>
 
@@ -1169,7 +1224,7 @@ const TAG_INSIGHTS = {
   'Good Patience': 'Good patience waiting for the right moment — keep this up.',
 };
 
-let settings = { key:'main', month:'', traderName:'', capital:250, capitalAnchor:'', statsAnchor:'', weeklyTargetPct:100, riskPct:2, rewardPct:2, dailyLossLimitPct:5, checklistItems: DEFAULT_CHECKLIST.slice(), liteMode:false, lastRecapSeenDate:'', lastWeeklyReviewSeenWeek:'' };
+let settings = { key:'main', month:'', traderName:'', capital:250, capitalAnchor:'', statsAnchor:'', capitalHistory:[], weeklyTargetPct:100, riskPct:2, rewardPct:2, dailyLossLimitPct:5, checklistItems: DEFAULT_CHECKLIST.slice(), liteMode:false, lastRecapSeenDate:'', lastWeeklyReviewSeenWeek:'' };
 let trades = [];
 let withdrawals = [];
 let topups = [];
@@ -1187,6 +1242,14 @@ async function init(){
     await openDB();
     const s = await idbGetAll('settings');
     if(s && s.length) settings = Object.assign({}, settings, s[0]);
+    // Migration: older data has only a single capital/capitalAnchor pair (whatever
+    // it was last set to) with no record of earlier capital changes. Seed a one-entry
+    // Capital History from it so Reports have at least one real checkpoint to work
+    // from — you can add any earlier checkpoints you remember under Settings.
+    if(!settings.capitalHistory || !settings.capitalHistory.length){
+      settings.capitalHistory = [{ date: settings.capitalAnchor || '', capital: Number(settings.capital)||0 }];
+      await idbPut('settings', settings);
+    }
     trades = await idbGetAll('trades');
     sortTrades();
     withdrawals = await idbGetAll('withdrawals');
@@ -1240,6 +1303,7 @@ function renderAll(){
   document.body.classList.toggle('lite-mode', !!settings.liteMode);
   pendingChecklistSettingItems = (settings.checklistItems && settings.checklistItems.length) ? [...settings.checklistItems] : DEFAULT_CHECKLIST.slice();
   renderChecklistSettings();
+  renderCapitalHistoryList();
   document.getElementById('monthLabel').textContent =
     (settings.month || 'Set your month in ⚙ settings') + ' · Weekly target ' + fmt(settings.weeklyTargetPct) + '%';
   const name = (settings.traderName||'').trim();
@@ -1271,15 +1335,16 @@ function renderAll(){
       if(inBalanceScope) running += Number(ev.data.pnl)||0;
       const item = {...ev.data, balanceAfter: running};
       withBalance.push(item);
-      // Trade History feed on the dashboard only shows this fresh account's own trades
-      // once a Fresh Start has been done — full history stays available in Reports.
-      if(inStatsScope) feedItems.push({kind:'trade', data:item});
+      // Trade History feed always shows every trade ever logged — nothing is ever
+      // hidden or deleted here, ONLY the Total P&L/Win Rate/Trades tiles and Balance
+      // reset on Fresh Start. This is what keeps your full history visibly safe.
+      feedItems.push({kind:'trade', data:item});
     }else if(ev.type==='withdrawal'){
       if(inBalanceScope) running -= Number(ev.data.amount)||0;
-      if(inStatsScope) feedItems.push({kind:'withdrawal', data:{...ev.data, balanceAfter: running}});
+      feedItems.push({kind:'withdrawal', data:{...ev.data, balanceAfter: running}});
     }else{
       if(inBalanceScope) running += Number(ev.data.amount)||0;
-      if(inStatsScope) feedItems.push({kind:'topup', data:{...ev.data, balanceAfter: running}});
+      feedItems.push({kind:'topup', data:{...ev.data, balanceAfter: running}});
     }
   });
 
@@ -1337,29 +1402,6 @@ function syncCapitalToBalance(){
   toast('Capital field updated to $'+fmt(bal)+' — tap Save Settings to apply');
 }
 
-// ---- Fresh-start scoping for everything OTHER than the Reports screen ----
-// After a Fresh Start (New Account), statsAnchor is set. Every dashboard-facing view —
-// the trend chart, the Trade History feed, Daily Recap, Weekly Review — should only
-// ever "see" trades/withdrawals/top-ups from that date forward, so it feels like a
-// clean new account. Reports (computeReportData / buildTimeline) intentionally keep
-// using the FULL unfiltered history so old data always stays available there.
-function statsScopedTrades(){
-  const anchor = settings.statsAnchor || '';
-  return anchor ? trades.filter(t => (t.date||'') >= anchor) : trades;
-}
-function statsScopedWithdrawals(){
-  const anchor = settings.statsAnchor || '';
-  return anchor ? withdrawals.filter(w => (w.date||'') >= anchor) : withdrawals;
-}
-function statsScopedTopups(){
-  const anchor = settings.statsAnchor || '';
-  return anchor ? topups.filter(t => (t.date||'') >= anchor) : topups;
-}
-function statsScopedTimeline(){
-  const anchor = settings.statsAnchor || '';
-  const timeline = buildTimeline();
-  return anchor ? timeline.filter(ev => (ev.date||'') >= anchor) : timeline;
-}
 
 /* ---------- Daily loss-limit card (always visible on home) ---------- */
 function renderDailyRiskCard(){
@@ -1369,7 +1411,7 @@ function renderDailyRiskCard(){
   card.style.display = 'block';
   const todayStr = localDateStr(new Date());
   let todayPnl = 0;
-  statsScopedTrades().forEach(tr=>{ if(tr.date===todayStr) todayPnl += Number(tr.pnl)||0; });
+  trades.forEach(tr=>{ if(tr.date===todayStr) todayPnl += Number(tr.pnl)||0; });
   const base = Number(settings.capital)||0;
   const limitAmt = base*limitPct/100;
   const lossSoFar = todayPnl < 0 ? Math.abs(todayPnl) : 0;
@@ -1484,7 +1526,7 @@ function computeWeeklyGoal(){
   const base = Number(settings.capital)||0;
   let achieved = 0;
   let todayAchieved = 0;
-  statsScopedTrades().forEach(tr=>{
+  trades.forEach(tr=>{
     if(!tr.date) return;
     const d = new Date(tr.date+'T00:00:00');
     if(isNaN(d)) return;
@@ -1580,14 +1622,15 @@ function drawCandles(){
   const dotsWrap = document.getElementById('candles');
   lineWrap.innerHTML = '';
   dotsWrap.innerHTML = '';
-  const scoped = statsScopedTrades();
+
+  // This chart tracks the CURRENT account: once you've done a Fresh Start, it only
+  // plots trades from that reset date forward, same as Total P&L/Win Rate/Trades.
+  // Until you do a Fresh Start, statsAnchor is empty and it keeps replaying your
+  // full history, exactly like before — nothing changes for you until you reset.
+  const statsAnchor = settings.statsAnchor || '';
+  const scoped = statsAnchor ? trades.filter(t => (t.date||'') >= statsAnchor) : trades;
   if(!scoped.length) return;
 
-  // This chart shows day-to-day TREND, not your official capital figure — so a normal
-  // Starting Capital sync alone doesn't reset it (it keeps replaying real up/down
-  // movement across the same account). A Fresh Start (New Account) is different: it
-  // moves statsAnchor, and this chart — like Total P&L/Win Rate/Trades — only plots
-  // from that point forward, so it reads as a genuinely new account.
   const sorted = [...scoped].sort((a,b)=>{
     const da = (a.date||'')+'T'+(a.entryTime||'00:00');
     const db = (b.date||'')+'T'+(b.entryTime||'00:00');
@@ -1764,7 +1807,7 @@ function esc(s){ const d=document.createElement('div'); d.textContent=s??''; ret
 /* ---------- Daily Recap: a data-driven look back, not a script ---------- */
 function findLastTradingDayBefore(beforeStr){
   let best = null;
-  statsScopedTrades().forEach(t=>{
+  trades.forEach(t=>{
     if(t.date && t.date < beforeStr){
       if(!best || t.date > best) best = t.date;
     }
@@ -1826,9 +1869,8 @@ function computeTraderStats(list){
 
 function computeStreak(){
   let type=null, count=0;
-  const scoped = statsScopedTrades();
-  for(let i=scoped.length-1;i>=0;i--){
-    const p = Number(scoped[i].pnl)||0;
+  for(let i=trades.length-1;i>=0;i--){
+    const p = Number(trades[i].pnl)||0;
     const t = p>0.009?'win':(p<-0.009?'loss':'breakeven');
     if(t==='breakeven') break;
     if(type===null){ type=t; count=1; }
@@ -1851,7 +1893,7 @@ function extremeTag(stats, mode){
 // The "mirror" — macro patterns across your whole history, recomputed fresh every
 // time the recap opens so it grows sharper as you log more trades.
 function buildPatternInsights(){
-  const stats = computeTraderStats(statsScopedTrades());
+  const stats = computeTraderStats(trades);
   if(stats.count < 3) return null;
   const lines = [];
   const worst = extremeTag(stats,'worst');
@@ -1982,7 +2024,7 @@ function buildTradeInsight(tr, baseline){
 }
 
 function buildDailyRecap(dateStr){
-  const dayTrades = statsScopedTrades().filter(t=>t.date===dateStr).slice().sort((a,b)=>{
+  const dayTrades = trades.filter(t=>t.date===dateStr).slice().sort((a,b)=>{
     const ta=a.entryTime||'00:00', tb=b.entryTime||'00:00';
     if(ta!==tb) return ta<tb?-1:1;
     return (a.createdAt||0)-(b.createdAt||0);
@@ -2006,7 +2048,7 @@ function buildDailyRecap(dateStr){
       ? `This day pulled you close to (or past) your daily loss limit of $${fmt(limitAmt)}. Your balance is sitting at $${fmt(liveBalance)} right now — after a red day like this, sizing down for the next few trades is usually the safer move.`
       : `A red day, but within your risk limits. Balance is at $${fmt(liveBalance)} — nothing to panic about, just stay disciplined on the next setup.`;
   }
-  const baselineTrades = statsScopedTrades().filter(t=>t.date < dateStr);
+  const baselineTrades = trades.filter(t=>t.date < dateStr);
   const baseline = baselineTrades.length>=3 ? computeTraderStats(baselineTrades) : null;
   return { date: dateStr, dayTrades, netPnl, wins, losses, breakevens, caution, liveBalance, baseline };
 }
@@ -2090,7 +2132,7 @@ function mondayOf(dateStr){
 }
 function tradesInWeek(weekId){
   const start = weekId, end = addDaysStr(weekId, 6);
-  return statsScopedTrades().filter(t => t.date && t.date >= start && t.date <= end);
+  return trades.filter(t => t.date && t.date >= start && t.date <= end);
 }
 function findLastCompletedWeekWithTrades(beforeWeekId){
   let w = addDaysStr(beforeWeekId, -7);
@@ -2299,16 +2341,30 @@ function closeSettings(){
   document.getElementById('settingsBackdrop').classList.remove('open');
 }
 
+// Append (or, for a same-day edit, replace) one real capital checkpoint — this is the
+// literal source of truth Reports use to reconstruct what your balance actually was
+// on any given day, across as many resets/syncs as you've ever done.
+function pushCapitalCheckpoint(hist, date, capital){
+  const list = (hist||[]).slice();
+  const idx = list.findIndex(c=>c.date===date);
+  if(idx>=0) list[idx] = { date, capital };
+  else list.push({ date, capital });
+  list.sort((a,b)=> (a.date||'')<(b.date||'') ? -1 : ((a.date||'')>(b.date||'')?1:0));
+  return list;
+}
+
 async function saveSettings(){
   const newCapital = Number(document.getElementById('setCapital').value)||0;
   const capitalChanged = newCapital !== Number(settings.capital);
+  const today = localDateStr(new Date());
   settings = {
     key:'main',
     month: document.getElementById('setMonth').value,
     traderName: document.getElementById('setTraderName').value,
     capital: newCapital,
-    capitalAnchor: capitalChanged ? localDateStr(new Date()) : (settings.capitalAnchor || ''),
+    capitalAnchor: capitalChanged ? today : (settings.capitalAnchor || ''),
     statsAnchor: settings.statsAnchor || '',
+    capitalHistory: capitalChanged ? pushCapitalCheckpoint(settings.capitalHistory, today, newCapital) : (settings.capitalHistory || []),
     weeklyTargetPct: Number(document.getElementById('setWeeklyPct').value)||0,
     riskPct: Number(document.getElementById('setRiskPct').value)||0,
     rewardPct: Number(document.getElementById('setRewardPct').value)||0,
@@ -2316,6 +2372,7 @@ async function saveSettings(){
     checklistItems: pendingChecklistSettingItems.map(s=>s.trim()).filter(Boolean),
     liteMode: document.getElementById('setLiteMode').checked,
     lastRecapSeenDate: settings.lastRecapSeenDate || '',
+    lastWeeklyReviewSeenWeek: settings.lastWeeklyReviewSeenWeek || '',
   };
   document.body.classList.toggle('lite-mode', !!settings.liteMode);
   await idbPut('settings', settings);
@@ -2572,10 +2629,46 @@ function computeReportData(){
     label = mlabel;
   }
 
-  // Walk ALL trades + withdrawals + topups chronologically for true balance; keep trading P&L pure
-  let bal = Number(settings.capital)||0;
-  let openingBalance = bal;
-  let closingBalance = bal;
+  // Reconstruct a real day-to-day Balance for the statement — not a flat number, and
+  // not a fabricated projection either. Capital History is the literal log of every
+  // capital figure you ever actually set (every Starting Capital edit and every Fresh
+  // Start appends a dated checkpoint — see pushCapitalCheckpoint). We merge that log
+  // with your trades/withdrawals/top-ups in chronological order: hitting a checkpoint
+  // HARD-SETS the balance to that literal figure (that's what really happened to your
+  // capital at that moment), then every event after it accumulates normally until the
+  // next checkpoint. Days before your very first known checkpoint have no real record
+  // at all, so — rather than invent a number — they're held flat at that earliest
+  // known figure.
+  const timeline = buildTimeline();
+  const deltaOf = ev => ev.type==='trade' ? (Number(ev.data.pnl)||0)
+                       : ev.type==='withdrawal' ? -(Number(ev.data.amount)||0)
+                       : (Number(ev.data.amount)||0);
+  const checkpoints = ((settings.capitalHistory && settings.capitalHistory.length)
+      ? settings.capitalHistory
+      : [{date: settings.capitalAnchor||'', capital: settings.capital}])
+    .map(c=>({date:c.date||'', capital:Number(c.capital)||0}))
+    .sort((a,b)=> (a.date||'')<(b.date||'') ? -1 : ((a.date||'')>(b.date||'')?1:0));
+  const balanceAfter = new Array(timeline.length);
+  let bal = checkpoints[0].capital;
+  let ci = 0;
+  for(let i=0;i<timeline.length;i++){
+    const d = timeline[i].date||'';
+    if(d < checkpoints[0].date){
+      balanceAfter[i] = checkpoints[0].capital; // before any real record — hold flat
+      continue;
+    }
+    while(ci < checkpoints.length && checkpoints[ci].date <= d){ bal = checkpoints[ci].capital; ci++; }
+    bal += deltaOf(timeline[i]);
+    balanceAfter[i] = bal;
+  }
+  // Balance immediately before the very first recorded event (used as the opening
+  // balance for a period that starts before any trade/withdrawal/top-up exists).
+  const balanceBeforeAll = timeline.length
+    ? ((timeline[0].date||'') < checkpoints[0].date ? checkpoints[0].capital : balanceAfter[0] - deltaOf(timeline[0]))
+    : checkpoints[0].capital;
+
+  let openingBalance = balanceBeforeAll;
+  let closingBalance = balanceBeforeAll;
   let sawStart = false;
   const byDay = {};
   const tagStats = {};
@@ -2583,25 +2676,20 @@ function computeReportData(){
   let withdrawalsInPeriod = 0;
   let topupsInPeriod = 0;
   let tradingPnlInPeriod = 0;
-  const anchor = settings.capitalAnchor || '';
-  const timeline = buildTimeline();
-  timeline.forEach(ev=>{
+  timeline.forEach((ev,i)=>{
     if(!ev.date) return;
     const d = new Date(ev.date+'T00:00:00');
     if(isNaN(d) || d>end) return;
-    const inBalanceScope = !anchor || ev.date >= anchor;
+    const bal = balanceAfter[i];
     if(d < start){
-      if(inBalanceScope){
-        if(ev.type==='trade') bal += Number(ev.data.pnl)||0;
-        else if(ev.type==='withdrawal') bal -= Number(ev.data.amount)||0;
-        else bal += Number(ev.data.amount)||0;
-      }
+      openingBalance = bal;
+      closingBalance = bal;
       return;
     }
-    if(!sawStart){ openingBalance = bal; sawStart = true; }
+    if(!sawStart){ sawStart = true; }
+    closingBalance = bal;
     if(ev.type==='trade'){
       const tr = ev.data;
-      if(inBalanceScope) bal += Number(tr.pnl)||0;
       tradingPnlInPeriod += Number(tr.pnl)||0;
       if(!byDay[tr.date]) byDay[tr.date] = { pnl:0, count:0, balance:0, withdrawal:0, topup:0 };
       byDay[tr.date].pnl += Number(tr.pnl)||0;
@@ -2621,22 +2709,19 @@ function computeReportData(){
       }
     }else if(ev.type==='withdrawal'){
       const w = ev.data;
-      if(inBalanceScope) bal -= Number(w.amount)||0;
       withdrawalsInPeriod += Number(w.amount)||0;
       if(!byDay[w.date]) byDay[w.date] = { pnl:0, count:0, balance:0, withdrawal:0, topup:0 };
       byDay[w.date].withdrawal += Number(w.amount)||0;
       byDay[w.date].balance = bal;
     }else{
       const t = ev.data;
-      if(inBalanceScope) bal += Number(t.amount)||0;
       topupsInPeriod += Number(t.amount)||0;
       if(!byDay[t.date]) byDay[t.date] = { pnl:0, count:0, balance:0, withdrawal:0, topup:0 };
       byDay[t.date].topup += Number(t.amount)||0;
       byDay[t.date].balance = bal;
     }
   });
-  if(!sawStart) openingBalance = bal;
-  closingBalance = bal;
+  if(!sawStart) closingBalance = openingBalance;
 
   const dayEntries = Object.entries(byDay).sort((a,b)=> a[0]<b[0]?1:-1);
   const totalPnl = tradingPnlInPeriod;
@@ -3345,6 +3430,88 @@ async function deleteTopup(id){
   renderAll();
 }
 
+/* ---------- Capital History (real literal checkpoints, used by Reports) ----------
+   Lives on its own dedicated screen (not buried in Settings) so it stays readable
+   and well-organized no matter how many checkpoints you build up over time. */
+let editingCkptDate = null; // the ORIGINAL date of the checkpoint being edited (its key)
+
+function openCapitalHistorySheet(){
+  renderCapitalHistoryList();
+  document.getElementById('capitalHistoryBackdrop').classList.add('open');
+  document.getElementById('capitalHistorySheet').classList.add('open');
+}
+function closeCapitalHistorySheet(){
+  document.getElementById('capitalHistoryBackdrop').classList.remove('open');
+  document.getElementById('capitalHistorySheet').classList.remove('open');
+}
+
+function renderCapitalHistoryList(){
+  const wrap = document.getElementById('capitalHistoryList');
+  if(!wrap) return;
+  const hist = (settings.capitalHistory && settings.capitalHistory.length)
+    ? [...settings.capitalHistory].sort((a,b)=> (a.date||'')<(b.date||'') ? -1 : ((a.date||'')>(b.date||'')?1:0))
+    : [];
+  if(!hist.length){
+    wrap.innerHTML = '<div class="report-empty">No checkpoints yet — add one below.</div>';
+    return;
+  }
+  wrap.innerHTML = hist.map((c,i) => `
+    <div class="ckpt-row" style="animation-delay:${Math.min(i,8)*0.04}s">
+      <span class="ck-date">${esc(c.date || '(no date)')}</span>
+      <span class="ck-cap">$${fmt(c.capital)}</span>
+      <span class="ck-actions">
+        <button type="button" onclick="editCapitalCheckpoint('${c.date}')">Edit</button>
+        <button type="button" onclick="deleteCapitalCheckpoint('${c.date}')">Delete</button>
+      </span>
+    </div>
+  `).join('');
+}
+function openCapitalCheckpointSheet(){
+  editingCkptDate = null;
+  document.getElementById('ckptSheetTitle').textContent = 'Add Capital Checkpoint';
+  document.getElementById('ckptDate').value = localDateStr(new Date());
+  document.getElementById('ckptCapital').value = '';
+  document.getElementById('ckptBackdrop').classList.add('open');
+  document.getElementById('ckptSheet').classList.add('open');
+}
+function closeCapitalCheckpointSheet(){
+  document.getElementById('ckptBackdrop').classList.remove('open');
+  document.getElementById('ckptSheet').classList.remove('open');
+}
+function editCapitalCheckpoint(date){
+  const c = (settings.capitalHistory||[]).find(x=>x.date===date);
+  if(!c) return;
+  editingCkptDate = date;
+  document.getElementById('ckptSheetTitle').textContent = 'Edit Capital Checkpoint';
+  document.getElementById('ckptDate').value = c.date || localDateStr(new Date());
+  document.getElementById('ckptCapital').value = c.capital;
+  document.getElementById('ckptBackdrop').classList.add('open');
+  document.getElementById('ckptSheet').classList.add('open');
+}
+async function saveCapitalCheckpoint(){
+  const date = document.getElementById('ckptDate').value;
+  const capital = Number(document.getElementById('ckptCapital').value);
+  if(!date){ toast('Pick a date'); return; }
+  if(isNaN(capital)){ toast('Enter a capital amount'); return; }
+  let hist = (settings.capitalHistory || []).slice();
+  if(editingCkptDate && editingCkptDate !== date){
+    hist = hist.filter(c=>c.date!==editingCkptDate);
+  }
+  hist = pushCapitalCheckpoint(hist, date, capital);
+  settings = { ...settings, capitalHistory: hist };
+  await idbPut('settings', settings);
+  closeCapitalCheckpointSheet();
+  renderAll();
+  toast('Checkpoint saved');
+}
+async function deleteCapitalCheckpoint(date){
+  const hist = (settings.capitalHistory || []).filter(c=>c.date!==date);
+  settings = { ...settings, capitalHistory: hist };
+  await idbPut('settings', settings);
+  renderAll();
+  toast('Checkpoint deleted');
+}
+
 /* ---------- Fresh Start (New Account) ---------- */
 // Unlike a normal Starting Capital edit/sync (which only moves capitalAnchor, so Balance
 // stays accurate without double-counting), this also moves statsAnchor — the deliberate
@@ -3355,7 +3522,8 @@ async function freshStartAccount(){
   if(newCapital<=0){ toast('Enter your new starting capital first'); return; }
   if(!confirm('Start fresh with $'+newCapital.toFixed(2)+'?\n\nThis resets Total P&L, Win Rate and Trades to zero and starts your Balance from this new capital. Your existing trade history and Reports are kept exactly as they are, always viewable for reference.')) return;
   const today = localDateStr(new Date());
-  settings = { ...settings, capital: newCapital, capitalAnchor: today, statsAnchor: today };
+  settings = { ...settings, capital: newCapital, capitalAnchor: today, statsAnchor: today,
+    capitalHistory: pushCapitalCheckpoint(settings.capitalHistory, today, newCapital) };
   await idbPut('settings', settings);
   renderAll();
   toast('Fresh start! New account begins from today.');

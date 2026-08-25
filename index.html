@@ -1271,13 +1271,15 @@ function renderAll(){
       if(inBalanceScope) running += Number(ev.data.pnl)||0;
       const item = {...ev.data, balanceAfter: running};
       withBalance.push(item);
-      feedItems.push({kind:'trade', data:item});
+      // Trade History feed on the dashboard only shows this fresh account's own trades
+      // once a Fresh Start has been done — full history stays available in Reports.
+      if(inStatsScope) feedItems.push({kind:'trade', data:item});
     }else if(ev.type==='withdrawal'){
       if(inBalanceScope) running -= Number(ev.data.amount)||0;
-      feedItems.push({kind:'withdrawal', data:{...ev.data, balanceAfter: running}});
+      if(inStatsScope) feedItems.push({kind:'withdrawal', data:{...ev.data, balanceAfter: running}});
     }else{
       if(inBalanceScope) running += Number(ev.data.amount)||0;
-      feedItems.push({kind:'topup', data:{...ev.data, balanceAfter: running}});
+      if(inStatsScope) feedItems.push({kind:'topup', data:{...ev.data, balanceAfter: running}});
     }
   });
 
@@ -1335,6 +1337,30 @@ function syncCapitalToBalance(){
   toast('Capital field updated to $'+fmt(bal)+' — tap Save Settings to apply');
 }
 
+// ---- Fresh-start scoping for everything OTHER than the Reports screen ----
+// After a Fresh Start (New Account), statsAnchor is set. Every dashboard-facing view —
+// the trend chart, the Trade History feed, Daily Recap, Weekly Review — should only
+// ever "see" trades/withdrawals/top-ups from that date forward, so it feels like a
+// clean new account. Reports (computeReportData / buildTimeline) intentionally keep
+// using the FULL unfiltered history so old data always stays available there.
+function statsScopedTrades(){
+  const anchor = settings.statsAnchor || '';
+  return anchor ? trades.filter(t => (t.date||'') >= anchor) : trades;
+}
+function statsScopedWithdrawals(){
+  const anchor = settings.statsAnchor || '';
+  return anchor ? withdrawals.filter(w => (w.date||'') >= anchor) : withdrawals;
+}
+function statsScopedTopups(){
+  const anchor = settings.statsAnchor || '';
+  return anchor ? topups.filter(t => (t.date||'') >= anchor) : topups;
+}
+function statsScopedTimeline(){
+  const anchor = settings.statsAnchor || '';
+  const timeline = buildTimeline();
+  return anchor ? timeline.filter(ev => (ev.date||'') >= anchor) : timeline;
+}
+
 /* ---------- Daily loss-limit card (always visible on home) ---------- */
 function renderDailyRiskCard(){
   const card = document.getElementById('dailyRiskCard');
@@ -1343,7 +1369,7 @@ function renderDailyRiskCard(){
   card.style.display = 'block';
   const todayStr = localDateStr(new Date());
   let todayPnl = 0;
-  trades.forEach(tr=>{ if(tr.date===todayStr) todayPnl += Number(tr.pnl)||0; });
+  statsScopedTrades().forEach(tr=>{ if(tr.date===todayStr) todayPnl += Number(tr.pnl)||0; });
   const base = Number(settings.capital)||0;
   const limitAmt = base*limitPct/100;
   const lossSoFar = todayPnl < 0 ? Math.abs(todayPnl) : 0;
@@ -1458,7 +1484,7 @@ function computeWeeklyGoal(){
   const base = Number(settings.capital)||0;
   let achieved = 0;
   let todayAchieved = 0;
-  trades.forEach(tr=>{
+  statsScopedTrades().forEach(tr=>{
     if(!tr.date) return;
     const d = new Date(tr.date+'T00:00:00');
     if(isNaN(d)) return;
@@ -1554,13 +1580,15 @@ function drawCandles(){
   const dotsWrap = document.getElementById('candles');
   lineWrap.innerHTML = '';
   dotsWrap.innerHTML = '';
-  if(!trades.length) return;
+  const scoped = statsScopedTrades();
+  if(!scoped.length) return;
 
-  // This chart shows day-to-day TREND, not your official capital figure — so it
-  // always replays full trade history regardless of any Starting Capital reset/sync.
-  // That keeps it showing real up/down movement even right after you sync capital,
-  // instead of flattening out because old trades got excluded from the balance.
-  const sorted = [...trades].sort((a,b)=>{
+  // This chart shows day-to-day TREND, not your official capital figure — so a normal
+  // Starting Capital sync alone doesn't reset it (it keeps replaying real up/down
+  // movement across the same account). A Fresh Start (New Account) is different: it
+  // moves statsAnchor, and this chart — like Total P&L/Win Rate/Trades — only plots
+  // from that point forward, so it reads as a genuinely new account.
+  const sorted = [...scoped].sort((a,b)=>{
     const da = (a.date||'')+'T'+(a.entryTime||'00:00');
     const db = (b.date||'')+'T'+(b.entryTime||'00:00');
     return da<db ? -1 : (da>db ? 1 : 0);
@@ -1736,7 +1764,7 @@ function esc(s){ const d=document.createElement('div'); d.textContent=s??''; ret
 /* ---------- Daily Recap: a data-driven look back, not a script ---------- */
 function findLastTradingDayBefore(beforeStr){
   let best = null;
-  trades.forEach(t=>{
+  statsScopedTrades().forEach(t=>{
     if(t.date && t.date < beforeStr){
       if(!best || t.date > best) best = t.date;
     }
@@ -1798,8 +1826,9 @@ function computeTraderStats(list){
 
 function computeStreak(){
   let type=null, count=0;
-  for(let i=trades.length-1;i>=0;i--){
-    const p = Number(trades[i].pnl)||0;
+  const scoped = statsScopedTrades();
+  for(let i=scoped.length-1;i>=0;i--){
+    const p = Number(scoped[i].pnl)||0;
     const t = p>0.009?'win':(p<-0.009?'loss':'breakeven');
     if(t==='breakeven') break;
     if(type===null){ type=t; count=1; }
@@ -1822,7 +1851,7 @@ function extremeTag(stats, mode){
 // The "mirror" — macro patterns across your whole history, recomputed fresh every
 // time the recap opens so it grows sharper as you log more trades.
 function buildPatternInsights(){
-  const stats = computeTraderStats(trades);
+  const stats = computeTraderStats(statsScopedTrades());
   if(stats.count < 3) return null;
   const lines = [];
   const worst = extremeTag(stats,'worst');
@@ -1953,7 +1982,7 @@ function buildTradeInsight(tr, baseline){
 }
 
 function buildDailyRecap(dateStr){
-  const dayTrades = trades.filter(t=>t.date===dateStr).slice().sort((a,b)=>{
+  const dayTrades = statsScopedTrades().filter(t=>t.date===dateStr).slice().sort((a,b)=>{
     const ta=a.entryTime||'00:00', tb=b.entryTime||'00:00';
     if(ta!==tb) return ta<tb?-1:1;
     return (a.createdAt||0)-(b.createdAt||0);
@@ -1977,7 +2006,7 @@ function buildDailyRecap(dateStr){
       ? `This day pulled you close to (or past) your daily loss limit of $${fmt(limitAmt)}. Your balance is sitting at $${fmt(liveBalance)} right now — after a red day like this, sizing down for the next few trades is usually the safer move.`
       : `A red day, but within your risk limits. Balance is at $${fmt(liveBalance)} — nothing to panic about, just stay disciplined on the next setup.`;
   }
-  const baselineTrades = trades.filter(t=>t.date < dateStr);
+  const baselineTrades = statsScopedTrades().filter(t=>t.date < dateStr);
   const baseline = baselineTrades.length>=3 ? computeTraderStats(baselineTrades) : null;
   return { date: dateStr, dayTrades, netPnl, wins, losses, breakevens, caution, liveBalance, baseline };
 }
@@ -2061,7 +2090,7 @@ function mondayOf(dateStr){
 }
 function tradesInWeek(weekId){
   const start = weekId, end = addDaysStr(weekId, 6);
-  return trades.filter(t => t.date && t.date >= start && t.date <= end);
+  return statsScopedTrades().filter(t => t.date && t.date >= start && t.date <= end);
 }
 function findLastCompletedWeekWithTrades(beforeWeekId){
   let w = addDaysStr(beforeWeekId, -7);

@@ -1,0 +1,9 @@
+node_modules
+dist
+# personal data never goes to GitHub
+backups/
+_backup_plain_ui/
+MT5 Trades/
+TradingView/
+*.json.bak
+.DS_Store

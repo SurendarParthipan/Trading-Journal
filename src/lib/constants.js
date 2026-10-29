@@ -35,6 +35,7 @@ export const DEFAULT_SETTINGS = {
   defaultStep: 1,
   riskWarnPct: 2,
   countWeekends: false,
+  weeklyTargetPct: 0,
   customTags: [],
   rules: DEFAULT_RULES,
 };

@@ -11,6 +11,7 @@ import { useJournal } from './lib/useJournal';
 import Dashboard from './views/Dashboard';
 import NewTrade from './views/NewTrade';
 import HistoryView from './views/History';
+import CalendarView from './views/Calendar';
 import Discipline from './views/Discipline';
 import Settings from './views/Settings';
 
@@ -169,6 +170,7 @@ function Shell() {
     dashboard: <Dashboard {...props} />,
     new: <NewTrade key={params.edit || params.copy || 'new'} {...props} />,
     history: <HistoryView {...props} />,
+    calendar: <CalendarView {...props} />,
     discipline: <Discipline {...props} />,
     settings: <Settings {...props} />,
   };

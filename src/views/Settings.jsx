@@ -224,6 +224,12 @@ export default function Settings() {
             <NumberSetting label="Default step" value={settings.defaultStep} onCommit={(defaultStep) => patch({ defaultStep })} />
           </div>
           <NumberSetting label="Risk warning above (% of capital)" value={settings.riskWarnPct} onCommit={(riskWarnPct) => patch({ riskWarnPct })} />
+          <NumberSetting
+            label="Weekly growth target (%)"
+            value={settings.weeklyTargetPct || 0}
+            onCommit={(weeklyTargetPct) => patch({ weeklyTargetPct: weeklyTargetPct > 0 ? weeklyTargetPct : 0 })}
+            hint="Shown on the dashboard and calendar. 0 turns it off."
+          />
           <div className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3">
             <div className="flex items-center gap-3">
               <Flame size={17} className="text-orange-400" />

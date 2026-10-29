@@ -1,4 +1,4 @@
-import { LayoutDashboard, Plus, LineChart, Flame, Settings, PanelLeftClose, PanelLeftOpen, HardDrive, Zap } from 'lucide-react';
+import { LayoutDashboard, Plus, LineChart, Flame, Settings, PanelLeftClose, PanelLeftOpen, HardDrive, CalendarDays } from 'lucide-react';
 import { CountMoney, XpBar } from './fx';
 import { useJournal } from '../lib/useJournal';
 import { money, pct } from '../lib/format';
@@ -9,9 +9,12 @@ export const VIEWS = [
   { id: 'dashboard', label: 'Head Office', short: 'Office', icon: LayoutDashboard, key: '1', color: '#38bdf8' },
   { id: 'new', label: 'Log Position', short: 'Log', icon: Plus, key: '2', color: '#34d399' },
   { id: 'history', label: 'Trade Ledger', short: 'Ledger', icon: LineChart, key: '3', color: '#818cf8' },
-  { id: 'discipline', label: 'Discipline & Streaks', short: 'Streaks', icon: Flame, key: '4', color: '#fbbf24' },
-  { id: 'settings', label: 'Vault & Settings', short: 'Vault', icon: Settings, key: '5', color: '#94a3b8' },
+  { id: 'calendar', label: 'Calendar', short: 'Calendar', icon: CalendarDays, key: '4', color: '#2dd4bf' },
+  { id: 'discipline', label: 'Discipline & Streaks', short: 'Streaks', icon: Flame, key: '5', color: '#fbbf24' },
+  { id: 'settings', label: 'Vault & Settings', short: 'Vault', icon: Settings, key: '6', color: '#94a3b8' },
 ];
+// Phone bar has five slots with Log in the middle; the Vault opens from the header gear.
+const MOBILE_NAV = ['dashboard', 'calendar', 'new', 'history', 'discipline'].map((id) => VIEWS.find((v) => v.id === id));
 
 function Logo({ small }) {
   return (
@@ -208,11 +211,11 @@ export function MobileHeader({ view, navigate }) {
         </div>
         <button
           type="button"
-          onClick={() => navigate('discipline')}
-          className="flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1.5 font-mono text-xs font-semibold text-emerald-300"
-          aria-label={`${xp.into} of ${xp.span} XP`}
+          onClick={() => navigate('settings')}
+          className={cx('grid h-8 w-8 place-items-center rounded-full border transition', view === 'settings' ? 'border-slate-300/40 bg-slate-300/15 text-slate-200' : 'border-white/10 bg-white/[0.04] text-zinc-400')}
+          aria-label="Vault & settings"
         >
-          <Zap size={13} className="fill-emerald-300/30" /> {xp.level}
+          <Settings size={15} />
         </button>
         <button
           type="button"
@@ -235,7 +238,7 @@ export function BottomNav({ view, navigate }) {
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0a0e18]/90 pb-safe backdrop-blur-2xl md:hidden">
       <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
       <div className="mx-auto grid h-[68px] max-w-lg grid-cols-5 items-center px-2">
-        {VIEWS.map((v) => {
+        {MOBILE_NAV.map((v) => {
           const active = view === v.id;
           const Icon = v.icon;
           if (v.id === 'new') {

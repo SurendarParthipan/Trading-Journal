@@ -1,4 +1,4 @@
-import { num, round, todayStr, addDays, isWeekend, uid } from './format';
+import { num, round, todayStr, addDays, isWeekend, uid, fmtDate } from './format';
 import { isMistake } from './constants';
 
 export const dirSign = (d) => (d === 'SELL' ? -1 : 1);
@@ -132,6 +132,148 @@ export function normalizeCashflow(r) {
 export function weekStart(d = todayStr()) {
   const dow = (new Date(`${d}T00:00`).getDay() + 6) % 7;
   return addDays(d, -dow);
+}
+
+/** Closed-trade totals per calendar day: Map date → { date, net, trades, wins, losses, mistakes }. */
+export function dayStats(trades, settings) {
+  const m = new Map();
+  for (const t of trades) {
+    if (t.pnl == null) continue;
+    const e = m.get(t.date) || { date: t.date, net: 0, trades: 0, wins: 0, losses: 0, mistakes: 0 };
+    e.net = round(e.net + t.pnl, 2);
+    e.trades += 1;
+    if (t.pnl > 0) e.wins += 1;
+    if (t.pnl < 0) e.losses += 1;
+    if (settings && t.tags.some((tag) => isMistake(tag, settings))) e.mistakes += 1;
+    m.set(t.date, e);
+  }
+  return m;
+}
+
+/**
+ * One report per trading week (Mon–Sun), oldest first, including the current week.
+ * The week's start balance includes deposits/withdrawals made before its first trade,
+ * so a Monday withdrawal resets the base the growth % is measured against.
+ */
+export function weekReports(trades, cashflows, settings) {
+  const start = Number(settings.startingCapital) || 0;
+  const closed = chrono(trades).filter((t) => t.pnl != null);
+  const keys = new Set([weekStart()]);
+  closed.forEach((t) => keys.add(weekStart(t.date)));
+  cashflows.forEach((c) => keys.add(weekStart(c.date)));
+  const days = dayStats(closed, settings);
+  const target = Number(settings.weeklyTargetPct) || 0;
+
+  return [...keys].sort().map((from) => {
+    const to = addDays(from, 6);
+    const wt = closed.filter((t) => t.date >= from && t.date <= to);
+    const wc = cashflows.filter((c) => c.date >= from && c.date <= to);
+    const firstTrade = wt[0]?.date;
+    const before = start
+      + closed.filter((t) => t.date < from).reduce((a, t) => a + t.pnl, 0)
+      + cashflows.filter((c) => c.date < from).reduce((a, c) => a + cashSigned(c), 0);
+    const earlyCash = wc.filter((c) => !firstTrade || c.date <= firstTrade).reduce((a, c) => a + cashSigned(c), 0);
+    const open = round(before + earlyCash, 2);
+    const net = round(wt.reduce((a, t) => a + t.pnl, 0), 2);
+    const cash = round(wc.reduce((a, c) => a + cashSigned(c), 0), 2);
+    const dayList = [];
+    for (let d = from; d <= to; d = addDays(d, 1)) if (days.has(d)) dayList.push(days.get(d));
+    const sortedDays = [...dayList].sort((a, b) => b.net - a.net);
+    const wins = wt.filter((t) => t.pnl > 0).length;
+    const clean = wt.filter((t) => !t.tags.some((tag) => isMistake(tag, settings))).length;
+    const worstTag = tagCosts(wt, settings).find((x) => x.kind === 'bad' && x.net < 0) || null;
+    let bal = open;
+    const curve = [{ label: 'Start', balance: open }];
+    wt.forEach((t, i) => {
+      bal += t.pnl;
+      curve.push({ label: `#${i + 1}`, date: t.date, balance: round(bal, 2) });
+    });
+    const growthPct = open > 0 ? (net / open) * 100 : null;
+    return {
+      key: from,
+      from,
+      to,
+      open,
+      close: round(before + net + cash, 2),
+      net,
+      growthPct,
+      deposited: round(wc.filter((c) => c.type === 'deposit').reduce((a, c) => a + c.amount, 0), 2),
+      withdrawn: round(wc.filter((c) => c.type === 'withdrawal').reduce((a, c) => a + c.amount, 0), 2),
+      trades: wt.length,
+      wins,
+      losses: wt.filter((t) => t.pnl < 0).length,
+      winRate: wt.length ? (wins / wt.length) * 100 : null,
+      discipline: wt.length ? (clean / wt.length) * 100 : null,
+      days: dayList,
+      bestDay: sortedDays.length && sortedDays[0].net > 0 ? sortedDays[0] : null,
+      worstDay: sortedDays.length && sortedDays[sortedDays.length - 1].net < 0 ? sortedDays[sortedDays.length - 1] : null,
+      worstTag,
+      curve,
+      target,
+      targetPct: target > 0 && growthPct != null ? (growthPct / target) * 100 : null,
+    };
+  });
+}
+
+export const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+/** 0 = Monday … 6 = Sunday. */
+export const weekdayIndex = (d) => (new Date(`${d}T00:00`).getDay() + 6) % 7;
+
+/** Per weekday, over traded days: average day P&L, win rate, green/red day counts. */
+export function weekdayStats(trades, settings) {
+  const rows = WEEKDAY_NAMES.map((name, i) => ({ i, name, short: name.slice(0, 3), days: 0, green: 0, red: 0, net: 0, trades: 0, wins: 0, avg: null, winRate: null }));
+  for (const d of dayStats(trades, settings).values()) {
+    const r = rows[weekdayIndex(d.date)];
+    r.days += 1;
+    r.net = round(r.net + d.net, 2);
+    r.trades += d.trades;
+    r.wins += d.wins;
+    if (d.net > 0) r.green += 1;
+    if (d.net < 0) r.red += 1;
+  }
+  rows.forEach((r) => {
+    r.avg = r.days ? round(r.net / r.days, 2) : null;
+    r.winRate = r.trades ? (r.wins / r.trades) * 100 : null;
+  });
+  return rows;
+}
+
+/** Plain-language patterns from the day and week history (empty until there is enough data). */
+export function tradingInsights(trades, settings, weeks, cur = '$') {
+  const out = [];
+  const fmt = (n) => `${n < 0 ? '-' : '+'}${cur}${Math.abs(n).toFixed(2)}`;
+  const wd = weekdayStats(trades, settings).filter((r) => r.days >= 2);
+  if (wd.length >= 2) {
+    const best = wd.reduce((a, b) => (b.avg > a.avg ? b : a));
+    const worst = wd.reduce((a, b) => (b.avg < a.avg ? b : a));
+    if (best.avg > 0) out.push({ tone: 'good', text: `${best.name} is your strongest day: ${fmt(best.avg)} on average, ${best.green} of ${best.days} green.` });
+    if (worst.avg < 0 && worst !== best) out.push({ tone: 'bad', text: `${worst.name} costs you the most: ${fmt(worst.avg)} on average, ${worst.red} of ${worst.days} red. Trade smaller or sit out.` });
+  }
+  const days = [...dayStats(trades, settings).values()];
+  const green = days.filter((d) => d.net > 0);
+  const red = days.filter((d) => d.net < 0);
+  if (green.length >= 2 && red.length >= 2) {
+    const g = green.reduce((a, d) => a + d.trades, 0) / green.length;
+    const r = red.reduce((a, d) => a + d.trades, 0) / red.length;
+    if (r >= g * 1.4) out.push({ tone: 'bad', text: `Red days average ${r.toFixed(1)} trades vs ${g.toFixed(1)} on green days. Losing days come from overtrading: stop after your planned setups.` });
+    else if (g >= r * 1.4) out.push({ tone: 'good', text: `Green days average ${g.toFixed(1)} trades vs ${r.toFixed(1)} on red days. Your edge shows when you stay active on good setups.` });
+    const redMistake = red.filter((d) => d.mistakes > 0).length;
+    if (redMistake / red.length >= 0.5) out.push({ tone: 'bad', text: `${redMistake} of your ${red.length} red days had a mistake-tagged trade. Most losses are behaviour, not the market.` });
+  }
+  if (days.length >= 5) {
+    const worst5 = [...days].sort((a, b) => a.net - b.net).slice(0, 5).filter((d) => d.net < 0);
+    const counts = {};
+    worst5.forEach((d) => { counts[weekdayIndex(d.date)] = (counts[weekdayIndex(d.date)] || 0) + 1; });
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    if (top && top[1] >= 3) out.push({ tone: 'bad', text: `${top[1]} of your ${worst5.length} worst days were ${WEEKDAY_NAMES[top[0]]}s.` });
+  }
+  const done = weeks.filter((w) => w.trades && w.growthPct != null);
+  if (done.length >= 2) {
+    const best = done.reduce((a, b) => (b.growthPct > a.growthPct ? b : a));
+    const avg = done.reduce((a, w) => a + w.growthPct, 0) / done.length;
+    out.push({ tone: avg >= 0 ? 'good' : 'bad', text: `Average week: ${avg >= 0 ? '+' : ''}${avg.toFixed(1)}%. Best week (${fmtDate(best.from, { day: 'numeric', month: 'short' })}) grew ${best.growthPct >= 0 ? '+' : ''}${best.growthPct.toFixed(1)}%.` });
+  }
+  return out;
 }
 
 export function getStats(trades, settings, cashflows = []) {

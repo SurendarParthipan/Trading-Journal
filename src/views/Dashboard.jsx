@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, Bar, BarChart, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
   ArrowDownRight, ArrowUpRight, Flame, Target, Scale, Wallet, CalendarRange, Plus, CalendarCheck, CheckCircle2,
-  ChevronRight, Brain, Activity, Sparkles, Pencil, Zap, Award, ArrowLeftRight,
+  ChevronRight, Brain, Activity, Sparkles, Pencil, Zap, Award, ArrowLeftRight, CalendarDays,
 } from 'lucide-react';
 import { Card, CardHeader, PnL, ResultBadge, DirBadge, Ring, ChartTooltip, Segmented, cx } from '../components/ui';
 import CashflowModal from '../components/Cashflow';
@@ -10,7 +10,8 @@ import CheckInModal from '../components/CheckIn';
 import { Beam, CountMoney, CountNum, Holo, PageTitle, XpBar } from '../components/fx';
 import { BadgeIcon } from '../components/Badge';
 import { useJournal } from '../lib/useJournal';
-import { cashSigned, equitySeries, getStats, monthly, newestFirst, resultOf, tagCosts, layerStats, weekStart } from '../lib/calc';
+import { cashSigned, equitySeries, getStats, monthly, newestFirst, resultOf, tagCosts, layerStats, weekStart, weekReports, dayStats } from '../lib/calc';
+import { TargetBar } from './Calendar';
 import { money, pct, todayStr, addDays, isWeekend, monthLabel, relDay, fmtDate, lotsFmt } from '../lib/format';
 
 function greeting() {
@@ -125,6 +126,17 @@ export default function Dashboard({ navigate }) {
     }
     return out;
   }, [streak.days, settings.countWeekends]);
+
+  const thisWeek = useMemo(() => weekReports(trades, cashflows, settings).find((w) => w.key === weekStart()), [trades, cashflows, settings]);
+  const weekCells = useMemo(() => {
+    const days = dayStats(trades, settings);
+    const out = [];
+    for (let i = 0; i < (settings.countWeekends ? 7 : 5); i++) {
+      const d = addDays(thisWeek.from, i);
+      out.push({ d, s: days.get(d) });
+    }
+    return out;
+  }, [trades, settings, thisWeek.from]);
 
   const pf = stats.profitFactor;
   const pfText = pf == null ? '—' : pf === Infinity ? '∞' : pf.toFixed(2);
@@ -296,6 +308,37 @@ export default function Dashboard({ navigate }) {
               </div>
               <ChevronRight size={16} className="text-zinc-600" />
             </button>
+          </div>
+        </Card>
+
+        {/* This week by day */}
+        <Card className="acc-emerald col-span-2 p-4 md:p-5 lg:col-span-4">
+          <CardHeader
+            icon={CalendarDays}
+            eyebrow={`This week by day · ${fmtDate(thisWeek.from, { day: 'numeric', month: 'short' })} – ${fmtDate(addDays(thisWeek.from, 4), { day: 'numeric', month: 'short' })}`}
+            right={
+              <button type="button" onClick={() => navigate('calendar')} className="flex items-center text-xs text-zinc-500 hover:text-zinc-200">
+                Calendar <ChevronRight size={14} />
+              </button>
+            }
+          />
+          <div className="mt-4 grid gap-4 md:grid-cols-[1fr_280px] md:items-center">
+            <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${weekCells.length}, minmax(0, 1fr))` }}>
+              {weekCells.map(({ d, s }) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => navigate('calendar')}
+                  className={cx('flex flex-col items-center gap-1 rounded-xl border px-1 py-2.5 transition hover:border-white/25', d === todayStr() ? 'border-amber-300/50' : 'border-white/[0.06]', d > todayStr() && 'opacity-40')}
+                  style={{ background: s?.net ? (s.net > 0 ? 'rgba(16,185,129,.22)' : 'rgba(244,63,94,.22)') : 'rgba(255,255,255,.02)' }}
+                >
+                  <span className="font-mono text-[10px] uppercase text-zinc-400">{fmtDate(d, { weekday: 'short' })}</span>
+                  <span className={cx('num font-mono text-xs font-semibold', !s ? 'text-zinc-600' : s.net >= 0 ? 'text-emerald-100' : 'text-rose-100')}>{s ? money(s.net, cur, { sign: true }) : '—'}</span>
+                  <span className="font-mono text-[9.5px] text-white/50">{s ? `${s.trades} trade${s.trades > 1 ? 's' : ''}` : ''}</span>
+                </button>
+              ))}
+            </div>
+            <TargetBar week={thisWeek} cur={cur} onEdit={() => navigate('calendar')} />
           </div>
         </Card>
 

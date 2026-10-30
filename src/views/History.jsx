@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Search, SlidersHorizontal, ChevronDown, Pencil, Trash2, Copy, ExternalLink, Maximize2, Layers, Brain, ImageIcon,
-  ShieldAlert, X, ListFilter, Plus,
+  ShieldAlert, X, ListFilter, Plus, FileText, FileDown,
 } from 'lucide-react';
 import { Card, PnL, ResultBadge, DirBadge, Segmented, Modal, ConfirmModal, EmptyState, cx, useToast } from '../components/ui';
 import Analytics from './Analytics';
@@ -11,6 +11,7 @@ import { layerStats, layerPnl, newestFirst, resultOf } from '../lib/calc';
 import { isMistake } from '../lib/constants';
 import { money, pct, priceFmt, lotsFmt, relDay, todayStr, addDays, fmtDate, round } from '../lib/format';
 import { imageSrc } from '../lib/image';
+import { openPdfReport, downloadWordReport } from '../lib/report';
 
 const RANGES = [
   { value: 'all', label: 'All' },
@@ -20,7 +21,7 @@ const RANGES = [
   { value: 'custom', label: 'Custom' },
 ];
 
-function TradeCard({ t, open, onToggle, onEdit, onCopy, onDelete, cur, settings }) {
+function TradeCard({ t, open, onToggle, onEdit, onCopy, onDelete, onReport, cur, settings }) {
   const ls = layerStats(t.layers);
   const res = resultOf(t);
   const img = imageSrc(t);
@@ -185,6 +186,9 @@ function TradeCard({ t, open, onToggle, onEdit, onCopy, onDelete, cur, settings 
             <button type="button" className="btn-ghost" onClick={onCopy}>
               <Copy size={15} /> Duplicate
             </button>
+            <button type="button" className="btn-ghost" onClick={onReport}>
+              <FileText size={15} /> PDF
+            </button>
             <button type="button" className="btn-danger ml-auto" onClick={onDelete}>
               <Trash2 size={15} /> Delete
             </button>
@@ -212,6 +216,9 @@ export default function HistoryView({ navigate, params }) {
   const [showFilters, setShowFilters] = useState(false);
   const [openId, setOpenId] = useState(params.open || null);
   const [toDelete, setToDelete] = useState(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [shots, setShots] = useState(true);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (params.open) setOpenId(params.open);
@@ -273,6 +280,25 @@ export default function HistoryView({ navigate, params }) {
     setQ('');
   };
 
+  const rangeLabel = range === 'all' ? '' : range === 'custom' ? 'Custom range' : range === 'month' ? 'This month' : `Last ${range} days`;
+  const reportOpts = { settings, cur, screenshots: shots, label: rangeLabel };
+  const exportPdf = (list = filtered) => {
+    if (!openPdfReport(list, reportOpts)) toast('Pop-up blocked, so the report was downloaded instead. Open it and choose Save as PDF.', { duration: 6000 });
+    setReportOpen(false);
+  };
+  const exportWord = async () => {
+    setBusy(true);
+    try {
+      await downloadWordReport(filtered, reportOpts);
+      toast('Word report downloaded');
+      setReportOpen(false);
+    } catch (e) {
+      toast(`Could not build the Word file: ${e.message}`, { tone: 'error' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const doDelete = (t) => {
     dispatch({ type: 'DELETE_TRADE', id: t.id });
     toast(`Deleted ${t.pair} trade`, { action: { label: 'Undo', onClick: () => dispatch({ type: 'SAVE_TRADE', trade: t }) }, duration: 6000 });
@@ -304,6 +330,10 @@ export default function HistoryView({ navigate, params }) {
               <SlidersHorizontal size={17} />
               <span className="hidden sm:inline">Filters</span>
               {activeFilters > 0 && <span className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-emerald-500 font-mono text-[10px] font-bold text-ink-950">{activeFilters}</span>}
+            </button>
+            <button type="button" onClick={() => setReportOpen(true)} disabled={!filtered.length} className="btn-ghost !px-3.5" aria-label="Export report">
+              <FileDown size={17} />
+              <span className="hidden sm:inline">Report</span>
             </button>
           </div>
 
@@ -402,6 +432,7 @@ export default function HistoryView({ navigate, params }) {
                           onEdit={() => navigate('new', { edit: t.id })}
                           onCopy={() => navigate('new', { copy: t.id })}
                           onDelete={() => setToDelete(t)}
+                          onReport={() => exportPdf([t])}
                         />
                       ))}
                     </div>
@@ -412,6 +443,27 @@ export default function HistoryView({ navigate, params }) {
           )}
         </div>
       )}
+
+      <Modal open={reportOpen} onClose={() => setReportOpen(false)} title="Export trade report">
+        <p className="text-sm text-zinc-400">
+          {filtered.length} trade{filtered.length === 1 ? '' : 's'} {activeFilters || q ? 'matching your filters' : 'in total'}
+          {filtered.length > 0 && <> · {fmtDate(filtered.at(-1).date)} to {fmtDate(filtered[0].date)}</>}. Use Filters first to pick a week, month or date range.
+        </p>
+        <p className="mt-2 text-xs text-zinc-500">White, printable report: summary, a table of every trade, then each trade with its layers, tags, notes and chart.</p>
+        <label className="mt-4 flex items-center gap-2.5 text-sm text-zinc-300">
+          <input type="checkbox" checked={shots} onChange={(e) => setShots(e.target.checked)} className="h-4 w-4 accent-emerald-500" />
+          Include chart screenshots
+        </label>
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <button type="button" className="btn-primary" onClick={() => exportPdf()}>
+            <FileText size={16} /> PDF
+          </button>
+          <button type="button" className="btn-ghost" onClick={exportWord} disabled={busy}>
+            <FileDown size={16} /> {busy ? 'Building…' : 'Word'}
+          </button>
+        </div>
+        <p className="mt-3 text-[11px] text-zinc-500">PDF opens the report and the print window: choose "Save as PDF". On phone, PDF works best.</p>
+      </Modal>
 
       <ConfirmModal
         open={!!toDelete}
